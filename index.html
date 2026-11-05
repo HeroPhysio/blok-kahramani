@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Blok Kahramanı</title>
-<meta name="description" content="Neon temalı 8x8 blok bulmaca. Parçaları sürükle, satır ve sütunları patlat, kombo yap. Kolay, Orta ve Zor seviye.">
+<meta name="description" content="Neon temalı 8x8 blok bulmaca. Parçaları sürükle, satır ve sütunları patlat, komboyu sürdür, milyonlara ulaş.">
 <meta name="apple-mobile-web-app-title" content="Blok Kahramanı">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -12,7 +12,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Blok Kahramanı">
 <meta property="og:title" content="Blok Kahramanı">
-<meta property="og:description" content="Parçaları sürükle, satır ve sütunları patlat, kombo yap. Kolay, Orta ve Zor seviye.">
+<meta property="og:description" content="Parçaları sürükle, satır ve sütunları patlat, komboyu sürdür, milyonlara ulaş.">
 <meta property="og:url" content="https://herophysio.github.io/blok-kahramani/">
 <meta property="og:image" content="https://herophysio.github.io/blok-kahramani/og.jpg">
 <meta property="og:image:type" content="image/jpeg">
@@ -34,7 +34,8 @@
        bg     – yıldızlar, tahta çerçevesi, raf paneli: yalnızca ekran boyutu değişince çizilir
        cells  – yerleşmiş bloklar: yalnızca tahta değişince
        hl     – yerleştirme önizlemesi: yalnızca parçanın oturacağı kare değişince
-       game   – patlama efektleri ve raf: yalnızca animasyon sürerken
+       trayCv – raftaki parçalar: yalnızca raf değişince ya da giriş animasyonunda
+       game   – patlama efektleri (daha düşük çözünürlükte): yalnızca efekt sürerken
        dragEl – sürüklenen parça: bir kez çizilir, GPU'da kaydırılır
      Skor, kombo ve uçan yazılar HTML/CSS; süreğen animasyonlar yalnızca opaklık/dönüşüm kullanır. */
   :root {
@@ -143,7 +144,7 @@
     transform: translate(-50%, -50%);
     font: 400 44px/1 var(--display);
     color: #f2f9ff;
-    text-shadow: 0 0 .28em rgba(43, 160, 255, .95), 0 0 .7em rgba(43, 140, 255, .45), 0 .04em 0 rgba(40, 110, 220, .8);
+    text-shadow: 0 0 .28em rgba(43, 160, 255, .95), 0 .04em 0 rgba(40, 110, 220, .8);
     white-space: nowrap;
   }
   .hud-score span { display: inline-block; will-change: transform; }
@@ -174,7 +175,7 @@
   .hud-combo.on .hud-label { color: #9fe9ff; }
   #hudCombo { display: inline-block; color: #34416a; transform-origin: 100% 50%; }
   .hud-combo.on #hudCombo { color: #5ff0ff; text-shadow: 0 0 .35em rgba(43, 227, 255, .9); }
-  .pips { display: none; gap: max(5px, calc(var(--u) * .02)); }
+  .pips { display: none; gap: max(4px, calc(var(--u) * .014)); }
   .hud-combo.on .pips { display: flex; }
   .pips i { display: block; width: max(4px, calc(var(--u) * .011)); height: max(4px, calc(var(--u) * .011)); transform: rotate(45deg); border: 1px solid rgba(140, 160, 210, .5); }
   .pips i.on { background: var(--gold); border-color: var(--gold); box-shadow: 0 0 6px rgba(255, 197, 49, .9); }
@@ -198,7 +199,7 @@
   #hint b { font: 400 calc(var(--cs) * .42)/1 var(--display); color: #d6e8ff; text-shadow: 0 0 .4em rgba(43, 160, 255, .9); }
   #hint span { font: 600 calc(var(--cs) * .36)/1 var(--ui); color: #8fb3e8; }
 
-  /* Uçan yazılar: HARİKA!, KOMBO ×2, +160 */
+  /* Uçan yazılar: HARİKA!, KOMBO ×12, +130 */
   #floats { position: fixed; left: 0; top: 0; width: 100%; height: 100%; z-index: 4; pointer-events: none; overflow: hidden; }
   .float {
     position: absolute;
@@ -209,7 +210,7 @@
     line-height: 1;
     opacity: 0;
     will-change: transform, opacity;
-    animation: floatUp 1.1s ease-out both;
+    animation: floatUp .95s ease-out both;
   }
   .float-praise { font-size: calc(var(--cs) * .95); color: #ffd040; text-shadow: 0 .06em 0 #8a4200, 0 0 .07em rgba(4, 8, 26, .95), 0 0 .3em rgba(255, 170, 30, .95), 0 0 .8em rgba(255, 130, 20, .5); }
   .float-combo { font-size: calc(var(--cs) * .72); color: #63eeff; text-shadow: 0 .06em 0 #0b3a80, 0 0 .07em rgba(4, 8, 26, .95), 0 0 .3em rgba(43, 227, 255, .95), 0 0 .8em rgba(43, 140, 255, .5); }
@@ -336,53 +337,8 @@
   .btn-ghost { color: var(--text); background: rgba(20, 34, 86, .85); box-shadow: inset 0 0 0 1px var(--line); }
   .btn-ghost:hover { filter: brightness(1.15); }
   .btn-row { display: flex; gap: 10px; }
-  .btn-stack { display: grid; gap: 10px; }
-
-  /* Seviye renkleri ve küçük seviye etiketi */
-  [data-level="kolay"] { --lv: #63eeff; --lvg: rgba(43, 227, 255, .5); }
-  [data-level="orta"] { --lv: #ffc531; --lvg: rgba(255, 190, 40, .5); }
-  [data-level="zor"] { --lv: #ff7a45; --lvg: rgba(255, 110, 50, .5); }
-  .lvl-chip { margin-left: .35em; color: var(--lv); }
-  .lvl-chip::before { content: "·"; margin-right: .35em; color: var(--muted); }
-
-  /* Seviye menüsü */
-  .menu-card { width: min(380px, 100%); }
-  .btn-continue { display: grid; gap: 6px; margin-bottom: 14px; }
-  .btn-continue small { font: 600 13px/1 var(--ui); letter-spacing: .06em; opacity: .8; }
-  .levels { display: grid; gap: 10px; }
-  .lvl {
-    appearance: none;
-    -webkit-appearance: none;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    column-gap: 12px;
-    row-gap: 4px;
-    width: 100%;
-    padding: 13px 16px 12px;
-    border: 1px solid rgba(92, 160, 255, .26);
-    border-radius: 16px;
-    background: linear-gradient(180deg, rgba(20, 36, 92, .92), rgba(10, 18, 52, .92));
-    color: var(--text);
-    text-align: left;
-    cursor: pointer;
-    transition: transform .12s ease, border-color .2s ease;
-  }
-  .lvl:hover { border-color: var(--lv); }
-  .lvl:active { transform: scale(.98); }
-  .lvl:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
-  .lvl.last { border-color: var(--lv); box-shadow: inset 0 0 0 1px var(--lv), 0 0 18px var(--lvg); }
-  .lvl-name { font: 400 20px/1 var(--display); letter-spacing: .06em; color: var(--lv); text-shadow: 0 0 12px var(--lvg); }
-  .lvl-desc { grid-column: 1; font: 600 14px/1.25 var(--ui); color: var(--muted); }
-  .lvl-rec { grid-column: 2; grid-row: 1 / span 2; text-align: right; font: 700 11px/1 var(--ui); letter-spacing: .1em; color: var(--muted); }
-  .lvl-rec b { display: block; margin-top: 5px; font: 400 16px/1 var(--display); letter-spacing: 0; color: var(--text); }
-  .menu-note { margin: 14px 0 0; font: 600 14px/1.3 var(--ui); color: #ffb48a; }
-  .menu-actions { margin-top: 12px; }
   @media (max-height: 560px) {
     .card { padding: 16px 18px; }
-    .menu-card .sub { margin-bottom: 10px; }
-    .lvl { padding: 9px 14px 8px; }
-    .levels { gap: 8px; }
   }
   .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
   #insetProbe {
@@ -452,7 +408,7 @@
   @media (prefers-reduced-motion: reduce) {
     #twinkle i, #ring, #hl.pulse, #hint, .overlay, .card, .badge { animation: none; }
     #twinkle i { opacity: .5; }
-    .float { animation: floatFade 1.1s linear both; }
+    .float { animation: floatFade .95s linear both; }
   }
 </style>
 </head>
@@ -480,13 +436,13 @@
     <svg viewBox="-12 -12 24 24"><path d="M3 -12L-7 2H-1L-3 12L7 -3H1Z"/></svg>
   </div>
   <div class="hud-side hud-best">
-    <div class="hud-label"><svg viewBox="-11 -9 22 16" aria-hidden="true"><path d="M-9 6L-10 -5L-4 0L0 -8L4 0L10 -5L9 6Z"/></svg>REKOR<span id="hudLevel" class="lvl-chip" data-level="orta">ORTA</span></div>
+    <div class="hud-label"><svg viewBox="-11 -9 22 16" aria-hidden="true"><path d="M-9 6L-10 -5L-4 0L0 -8L4 0L10 -5L9 6Z"/></svg>REKOR</div>
     <div id="hudBest" class="hud-val">0</div>
   </div>
   <div id="hudScoreBox" class="hud-score"><span id="hudScore">0</span></div>
   <div id="hudComboBox" class="hud-side hud-combo">
     <div class="hud-label">KOMBO</div>
-    <div class="hud-cval"><span class="pips" aria-hidden="true"><i></i><i></i><i></i></span><span id="hudCombo" class="hud-val">—</span></div>
+    <div class="hud-cval"><span class="pips" aria-hidden="true"></span><span id="hudCombo" class="hud-val">—</span></div>
   </div>
 </div>
 
@@ -495,6 +451,7 @@
   <div id="ringWrap" aria-hidden="true"><div id="ring"></div></div>
   <canvas id="cells" class="region" aria-hidden="true"></canvas>
   <canvas id="hl" class="region" aria-hidden="true"></canvas>
+  <canvas id="trayCv" class="region" aria-hidden="true"></canvas>
   <canvas id="game" class="layer" role="img" aria-label="Blok Kahramanı oyun alanı. Alttaki parçaları sürükleyip 8x8 ızgaraya bırak; dolan satır ve sütunlar patlar."></canvas>
 </div>
 <canvas id="dragEl" aria-hidden="true"></canvas>
@@ -514,7 +471,7 @@
   <div id="goCard" class="card" tabindex="-1">
     <div id="goBadge" class="badge" hidden>YENİ REKOR!</div>
     <h2 id="goTitle" class="title">KAYBETTİN</h2>
-    <p class="sub">Yerleştirecek yer kalmadı<span id="goLevel" class="lvl-chip" data-level="orta">ORTA</span></p>
+    <p class="sub">Yerleştirecek yer kalmadı</p>
     <div class="label">SKOR</div>
     <div id="goScore" class="big-score">0</div>
     <div class="stats">
@@ -522,25 +479,18 @@
       <div class="stat"><span>ÇİZGİ</span><b id="goLines">0</b></div>
       <div class="stat"><span>EN İYİ KOMBO</span><b id="goCombo">×0</b></div>
     </div>
-    <div class="btn-stack">
-      <button id="btnAgain" class="btn btn-primary" type="button">TEKRAR OYNA</button>
-      <button id="btnLevels" class="btn btn-ghost" type="button">SEVİYE SEÇ</button>
-    </div>
+    <button id="btnAgain" class="btn btn-primary" type="button">TEKRAR OYNA</button>
   </div>
 </div>
 
-<div id="ovMenu" class="overlay" role="dialog" aria-modal="true" aria-labelledby="mnTitle" hidden>
-  <div id="mnCard" class="card menu-card" tabindex="-1">
-    <h2 id="mnTitle" class="title small">BLOK KAHRAMANI</h2>
-    <p class="sub">Seviyeni seç</p>
-    <button id="btnContinue" class="btn btn-primary btn-continue" type="button" hidden>DEVAM ET<small id="continueInfo"></small></button>
-    <div class="levels">
-      <button id="lvl-kolay" class="lvl" type="button" data-level="kolay"><span class="lvl-name">KOLAY</span><span class="lvl-desc">Parçalar hep sığar, kombolar uzun sürer</span><span class="lvl-rec">REKOR<b id="rec-kolay">0</b></span></button>
-      <button id="lvl-orta" class="lvl" type="button" data-level="orta"><span class="lvl-name">ORTA</span><span class="lvl-desc">Kolay başlar, skor arttıkça zorlaşır</span><span class="lvl-rec">REKOR<b id="rec-orta">0</b></span></button>
-      <button id="lvl-zor" class="lvl" type="button" data-level="zor"><span class="lvl-name">ZOR</span><span class="lvl-desc">Yardım yok, büyük parçalar çabuk gelir</span><span class="lvl-rec">REKOR<b id="rec-zor">0</b></span></button>
+<div id="ovConfirm" class="overlay" role="dialog" aria-modal="true" aria-labelledby="cfTitle" hidden>
+  <div id="cfCard" class="card" tabindex="-1">
+    <h2 id="cfTitle" class="title small">YENİDEN BAŞLA?</h2>
+    <p class="sub">Bu oyundaki skorun kaybolacak.</p>
+    <div class="btn-row">
+      <button id="btnCancel" class="btn btn-ghost" type="button">VAZGEÇ</button>
+      <button id="btnConfirm" class="btn btn-primary" type="button">BAŞLA</button>
     </div>
-    <p id="menuNote" class="menu-note" hidden>Yeni oyuna başlarsan bu oyundaki skorun kaybolur.</p>
-    <div id="menuActions" class="menu-actions" hidden><button id="btnMenuCancel" class="btn btn-ghost" type="button">VAZGEÇ</button></div>
   </div>
 </div>
 
@@ -636,18 +586,18 @@
     set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* depolama kapalı */ } },
     del(k) { try { localStorage.removeItem(k); } catch (e) { /* depolama kapalı */ } }
   };
-  const K_BEST = 'blokKahramani.rekor';            // eski tek rekor (yalnızca taşımak için okunur)
-  const K_BESTS = 'blokKahramani.rekorlar.v1';     // seviye başına rekor
-  const K_LEVEL = 'blokKahramani.seviye';          // son seçilen seviye
-  const K_SAVE = 'blokKahramani.kayit.v1';
+  // Yeni puanlamayla rekor ve kayıt sıfırdan başlar (eski anahtarlar okunmaz)
+  const K_BEST = 'blokKahramani.rekor.v2';
+  const K_SAVE = 'blokKahramani.kayit.v2';
   const K_SOUND = 'blokKahramani.ses';
 
   /* ================= DOM ================= */
-  const cvBg = $('bg'), cvCells = $('cells'), cvHl = $('hl'), canvas = $('game'), dragEl = $('dragEl');
+  const cvBg = $('bg'), cvCells = $('cells'), cvHl = $('hl'), cvTray = $('trayCv'), canvas = $('game'), dragEl = $('dragEl');
   const bctx = cvBg.getContext('2d');    // yıldızlar + tahta çerçevesi + boş hücreler + raf paneli (sabit)
   const cctx = cvCells.getContext('2d'); // yerleşmiş bloklar (yalnızca tahta değişince)
   const hctx = cvHl.getContext('2d');    // yerleştirme önizlemesi (yalnızca hedef kare değişince)
-  const ctx = canvas.getContext('2d');   // patlama efektleri + raf (yalnızca animasyon sürerken)
+  const tctx = cvTray.getContext('2d');  // raftaki parçalar (yalnızca raf değişince)
+  const ctx = canvas.getContext('2d');   // patlama efektleri (yalnızca efekt sürerken)
   const dctx = dragEl.getContext('2d');  // sürüklenen parça (bir kez çizilir)
   const stage = $('stage');
   const twinkleEl = $('twinkle');
@@ -659,14 +609,14 @@
   const hudComboBox = $('hudComboBox');
   const hudBestBox = document.querySelector('.hud-best');
   const hudCombo = $('hudCombo');
-  const pips = Array.prototype.slice.call(hudComboBox.querySelectorAll('.pips i'));
+  const pipsEl = hudComboBox.querySelector('.pips');
+  let pips = [];
   const hint = $('hint');
   const floatsEl = $('floats');
   const btnRestart = $('btnRestart');
   const btnSound = $('btnSound');
   const ovOver = $('ovOver');
-  const ovMenu = $('ovMenu');
-  const hudLevel = $('hudLevel');
+  const ovConfirm = $('ovConfirm');
   const probe = $('insetProbe');
   const live = $('live');
 
@@ -682,17 +632,7 @@
   const board = new Int8Array(N * N).fill(-1);   // -1 boş, 0..4 renk
   let tray = [null, null, null];
   let score = 0, displayScore = 0;
-  // Seviye ve seviye başına rekor (önceki sürümlerin tek rekoru ORTA'ya taşınır)
-  const LEVEL_IDS = ['kolay', 'orta', 'zor'];
-  const savedLevel = store.get(K_LEVEL, 'orta');
-  let level = LEVEL_IDS.indexOf(savedLevel) >= 0 ? savedLevel : 'orta';
-  const bests = { kolay: 0, orta: 0, zor: 0 };
-  (() => {
-    const b = store.get(K_BESTS, null);
-    if (b && typeof b === 'object') LEVEL_IDS.forEach(id => { bests[id] = Math.max(0, Number(b[id]) || 0); });
-    else bests.orta = Math.max(0, Number(store.get(K_BEST, 0)) || 0);
-  })();
-  let best = bests[level];
+  let best = Math.max(0, Number(store.get(K_BEST, 0)) || 0);
   let bestAtStart = best;
   let combo = 0, comboMoves = 0, maxCombo = 0, linesTotal = 0, moves = 0;
   let gameState = 'play';                          // play | ending | over
@@ -704,14 +644,16 @@
 
   /* ================= Çizim zamanlayıcısı =================
      Kare yalnızca bir şey değiştiğinde ya da animasyon sürerken çizilir; oyun beklerken hiçbir şey çizilmez. */
-  let rafId = 0, last = 0, frameDt = 1 / 60, animUntil = 0, wasBusy = false;
-  let cellsDirty = true, fxDirty = true, previewDirty = false, previewKey = '', greyRows = -1;
+  let rafId = 0, last = 0, frameDt = 1 / 60, animUntil = 0, trayAnimUntil = 0, wasBusy = false, trayWasBusy = false;
+  let cellsDirty = true, fxDirty = true, trayDirty = true, previewDirty = false, previewKey = '', greyRows = -1;
   function wake() { if (!rafId) rafId = requestAnimationFrame(frame); }
   function animate(ms) { animUntil = Math.max(animUntil, performance.now() + ms); wake(); }
+  function animateTray(ms) { trayAnimUntil = Math.max(trayAnimUntil, performance.now() + ms); trayDirty = true; wake(); }
 
   /* ================= Yerleşim ================= */
-  const L = { W: 0, H: 0, dpr: 1, cs: 40, bs: 320, fp: 8, bx: 0, by: 0, mode: 'col', hud: { x: 0, y: 0, w: 0, h: 0 }, tray: { x: 0, y: 0, w: 0, h: 0 }, slotW: 0 };
+  const L = { W: 0, H: 0, dpr: 1, fxDpr: 1, cs: 40, bs: 320, fp: 8, bx: 0, by: 0, mode: 'col', hud: { x: 0, y: 0, w: 0, h: 0 }, tray: { x: 0, y: 0, w: 0, h: 0 }, slotW: 0 };
   const REG = { x: 0, y: 0, w: 0, h: 0 };          // tahta bölgesi: bloklar ve önizleme katmanları yalnızca burayı kaplar
+  const TRG = { x: 0, y: 0, w: 0, h: 0 };          // raf bölgesi
   const FP = 0.026, HUD_K = 0.255, G1 = 0.045, G2 = 0.055, TRAY_K = 0.4, PANEL_K = 0.95, GX = 0.06, MAX_B = 600;
   let sprites = [], greySprite = null, whiteSprite = null, spritePad = 0, dragSize = 0;
 
@@ -735,8 +677,9 @@
   }
 
   // Tuvali verilen sayfa dikdörtgenine yerleştirir; çizimler yine sayfa koordinatlarıyla yapılır
-  function sizeLayer(cv, g, x, y, w, h) {
-    const d = L.dpr, bw = Math.max(1, Math.round(w * d)), bh = Math.max(1, Math.round(h * d));
+  function sizeLayer(cv, g, x, y, w, h, d) {
+    d = d || L.dpr;
+    const bw = Math.max(1, Math.round(w * d)), bh = Math.max(1, Math.round(h * d));
     if (cv.width !== bw || cv.height !== bh) { cv.width = bw; cv.height = bh; }
     const st = cv.style;
     st.left = x + 'px';
@@ -745,6 +688,16 @@
     st.height = h + 'px';
     g.setTransform(d, 0, 0, d, -x * d, -y * d);
     g.clearRect(x, y, w, h);
+  }
+
+  // Sayfa dikdörtgenini cihaz pikseline hizalanmış, ekranla sınırlı bir bölgeye çevirir
+  function snapRect(out, x0, y0, x1, y1) {
+    const d = L.dpr;
+    x0 = Math.max(0, x0); y0 = Math.max(0, y0); x1 = Math.min(L.W, x1); y1 = Math.min(L.H, y1);
+    out.x = Math.floor(x0 * d) / d;
+    out.y = Math.floor(y0 * d) / d;
+    out.w = Math.ceil((x1 - out.x) * d) / d;
+    out.h = Math.ceil((y1 - out.y) * d) / d;
   }
 
   let layoutKey = '';
@@ -757,6 +710,8 @@
     if (key === layoutKey) return; // boyut aynıysa hiçbir şeyi yeniden kurma
     layoutKey = key;
     L.W = W; L.H = H; L.dpr = dpr;
+    // Hızlı hareket eden efektler (patlama, kıvılcım) daha düşük çözünürlükte: her karede daha az piksel
+    L.fxDpr = Math.min(dpr, 1.5);
     const m = clamp(Math.min(W, H) * 0.03, 8, 22);
     const aw = Math.max(120, W - ins.l - ins.r - 2 * m);
     const ah = Math.max(120, H - ins.t - ins.b - 2 * m);
@@ -790,19 +745,18 @@
       L.tray = { x: px, y: top + outer * 0.5, w: panelW, h: outer * 0.5 };
     }
     L.slotW = L.tray.w / 3;
-    // Tahta bölgesi: blokların parıltısı da sığsın; kenarlar cihaz pikseline hizalı
+    // Tahta ve raf bölgeleri: blokların parıltısı da sığsın; kenarlar cihaz pikseline hizalı
     spritePad = Math.ceil(cs * 0.42);
-    const rp = spritePad + 2;
-    REG.x = Math.floor((L.bx - rp) * dpr) / dpr;
-    REG.y = Math.floor((L.by - rp) * dpr) / dpr;
-    REG.w = Math.ceil((L.bx + bs + rp - REG.x) * dpr) / dpr;
-    REG.h = Math.ceil((L.by + bs + rp - REG.y) * dpr) / dpr;
+    const rp = spritePad + 2, t = L.tray;
+    snapRect(REG, L.bx - rp, L.by - rp, L.bx + bs + rp, L.by + bs + rp);
+    snapRect(TRG, t.x - rp, t.y - rp, t.x + t.w + rp, t.y + t.h * 1.5 + rp); // altta giriş animasyonu için pay
     placeHtml();
     buildSprites();
     sizeLayer(cvBg, bctx, 0, 0, W, H);
-    sizeLayer(canvas, ctx, 0, 0, W, H);
+    sizeLayer(canvas, ctx, 0, 0, W, H, L.fxDpr);
     sizeLayer(cvCells, cctx, REG.x, REG.y, REG.w, REG.h);
     sizeLayer(cvHl, hctx, REG.x, REG.y, REG.w, REG.h);
+    sizeLayer(cvTray, tctx, TRG.x, TRG.y, TRG.w, TRG.h);
     // Sürükleme tuvali: en uzun parçayı (5 blok) alacak kare
     dragSize = Math.ceil((5 * cs + 2 * rp) * dpr) / dpr;
     dragEl.width = dragEl.height = Math.round(dragSize * dpr);
@@ -812,6 +766,7 @@
     buildTwinkle();
     cellsDirty = true;
     fxDirty = true;
+    trayDirty = true;
     previewKey = '';
     previewDirty = true;
     wake();
@@ -1040,20 +995,21 @@
       hudBest.textContent = bt;
       hudBest.style.fontSize = (Math.max(13, L.bs * 0.054) * Math.min(1, 8 / bt.length)) + 'px';
     }
-    const key = combo + '|' + comboMoves + '|' + gameState + '|' + level;
+    const key = combo + '|' + comboMoves + '|' + gameState;
     if (key !== comboKey) {
       sidesChanged = true;
       comboKey = key;
       const on = combo > 0;
       hudComboBox.classList.toggle('on', on);
-      hudCombo.textContent = on ? '×' + combo : '—';
-      // Üç elmas, kalan kombo süresini seviyenin kombo süresine oranla gösterir
-      const lit = Math.ceil((comboMoves / LEVELS[level].combo) * 3);
-      pips.forEach((el, k) => el.classList.toggle('on', k < lit));
+      hudCombo.textContent = on ? '×' + fmt(combo) : '—';
+      // Elmaslar: kombonun bozulmasına kalan hamle sayısı
+      if (pips.length !== MODE.combo) {
+        pipsEl.innerHTML = '<i></i>'.repeat(MODE.combo);
+        pips = Array.prototype.slice.call(pipsEl.children);
+      }
+      pips.forEach((el, k) => el.classList.toggle('on', k < comboMoves));
       const ringOn = combo >= 2 && gameState === 'play';
       ringWrap.style.opacity = ringOn ? String(clamp(0.35 + combo * 0.1, 0, 1)) : '0';
-      hudLevel.textContent = LEVELS[level].label;
-      hudLevel.setAttribute('data-level', level);
     }
     if (sidesChanged && scoreText) fitScore();
   }
@@ -1061,7 +1017,7 @@
   // Küçük "zıplama" efekti: Web Animations ile, yalnızca dönüşüm (GPU)
   function bump(el, s) {
     if (REDUCED || typeof el.animate !== 'function') return;
-    try { el.animate([{ transform: 'scale(' + s + ')' }, { transform: 'scale(1)' }], { duration: 320, easing: 'cubic-bezier(.2,.8,.3,1)' }); } catch (e) { /* desteklenmiyor */ }
+    try { el.animate([{ transform: 'scale(' + s + ')' }, { transform: 'scale(1)' }], { duration: 280, easing: 'cubic-bezier(.2,.8,.3,1)' }); } catch (e) { /* desteklenmiyor */ }
   }
 
   function spawnFloat(text, x, y, kind, delay) {
@@ -1073,7 +1029,7 @@
     if (delay) el.style.animationDelay = delay + 'ms';
     const done = () => { if (el.parentNode) el.parentNode.removeChild(el); };
     el.addEventListener('animationend', done);
-    setTimeout(done, 1600 + (delay || 0)); // animasyon olayı gelmezse yine de temizle
+    setTimeout(done, 1400 + (delay || 0)); // animasyon olayı gelmezse yine de temizle
     floatsEl.appendChild(el);
     while (floatsEl.childElementCount > 9) floatsEl.removeChild(floatsEl.firstElementChild);
   }
@@ -1082,16 +1038,16 @@
   function shake(amp) {
     if (REDUCED || typeof stage.animate !== 'function') return;
     const kf = [];
-    for (let i = 0; i < 7; i++) {
-      const a = amp * Math.pow(1 - i / 7, 2);
+    for (let i = 0; i < 6; i++) {
+      const a = amp * Math.pow(1 - i / 6, 2);
       kf.push({ transform: 'translate(' + rand(-a, a).toFixed(1) + 'px,' + rand(-a, a).toFixed(1) + 'px)' });
     }
     kf.push({ transform: 'translate(0px,0px)' });
-    try { stage.animate(kf, { duration: 340, easing: 'linear' }); } catch (e) { /* desteklenmiyor */ }
+    try { stage.animate(kf, { duration: 280, easing: 'linear' }); } catch (e) { /* desteklenmiyor */ }
   }
 
   function updateHint() { hint.hidden = !(moves === 0 && gameState === 'play' && !drag); }
-  function setModal() { document.body.classList.toggle('modal', !ovOver.hidden || !ovMenu.hidden); }
+  function setModal() { document.body.classList.toggle('modal', !ovOver.hidden || !ovConfirm.hidden); }
 
   // Uzun sayılar kutusuna sığsın diye yazı boyunu küçültür
   function fitText(el, text, maxPx, width) {
@@ -1101,24 +1057,15 @@
 
   /* ================= Oyun mantığı ================= */
   /* === PARÇA ÜRETİCİ (saf fonksiyonlar: tahtayı parametre olarak alır, simülasyonla da test edilir) ===
-     KOLAY: üçlü her zaman bir sırayla tamamen sığar, çoğunda çizgi tamamlayan parça vardır, kombo uzun sürer.
-     ORTA : kolay başlar; yardımlar skorla azalır, 40.000 puanda ZOR'un parça dağılımına ulaşır.
-     ZOR  : ilk sürümün kuralları; yardım yok, büyük parçalar 6.000 puana kadar hızla sıklaşır.
-     [başta, sonda] çiftleri skorla gelen zorluk d (0..1) ile karıştırılır:
-       combo     : kombonun bozulmadan sürdüğü hamle sayısı
-       ramp/curve: d = (skor / ramp) ^ curve; ramp 0 ise zorluk hiç artmaz
-       guarantee : üçlünün tamamının bir sırayla sığacağının garanti edilme olasılığı
-       assist1/2 : 1. parçanın / diğerlerinin çizgi tamamlayan şekillerden seçilme olasılığı
-       from/to   : parça ağırlık profili (profileWeight); bigLimit: üçlüde en fazla bir büyük parça kuralı */
-  const LEVELS = {
-    kolay: { label: 'KOLAY', combo: 6, ramp: 0, curve: 1, guarantee: [1, 1], assist1: [0.85, 0.85], assist2: [0.5, 0.5], from: 'kolay', to: 'kolay', bigLimit: 'hep' },
-    orta: { label: 'ORTA', combo: 3, ramp: 40000, curve: 2, guarantee: [1, 0], assist1: [0.6, 0.35], assist2: [0.25, 0], from: 'yardim', to: 'zor', bigLimit: 'azalan' },
-    zor: { label: 'ZOR', combo: 3, ramp: 6000, curve: 1, guarantee: [0, 0], assist1: [0.35, 0.35], assist2: [0, 0], from: 'duz', to: 'zor', bigLimit: 'yok' }
-  };
-
-  function difficulty(score, lv) {
-    return lv.ramp > 0 ? Math.pow(Math.min(1, Math.max(0, score / lv.ramp)), lv.curve) : 0;
-  }
+     Tek mod, cömert üretici:
+       - yeni üçlü o anki tahtaya her zaman bir sırayla tamamen sığar;
+       - kombo sürerken üçlüde, kalan hamle hakkı içinde çizgi patlatan bir yol bulunur (dikkatli oynayan komboyu koparmaz);
+       - parçaların çoğu çizgi tamamlayan şekillerden seçilir, tahta doldukça küçük parçalar sıklaşır;
+       - üçlüde en fazla bir büyük parça bulunur.
+     MODE.combo  : patlatma olmadan kaç hamle sonra kombonun bozulduğu (milyonlara ulaşılabilsin diye 5)
+     MODE.assist1: 1. parçanın, assist2: diğer parçaların çizgi tamamlayan şekillerden seçilme olasılığı
+     MODE.keep   : kombo sürerken komboyu koruyan bir üçlünün aranma olasılığı */
+  const MODE = { combo: 5, assist1: 0.85, assist2: 0.5, keep: 1 };
 
   function canPlaceOn(bd, s, r0, c0) {
     if (r0 < 0 || c0 < 0 || r0 + s.h > N || c0 + s.w > N) return false;
@@ -1132,7 +1079,7 @@
     return false;
   }
 
-  // Parçayı yerleştirip dolan satır ve sütunları temizler; yeni tahtayı döndürür
+  // Parçayı yerleştirip dolan satır ve sütunları temizler; yeni tahtayı döndürür (patlayan çizgi sayısı: placeAndClear.lines)
   function placeAndClear(bd, s, r0, c0) {
     const nb = new Int8Array(bd);
     for (const [r, c] of s.cells) nb[(r0 + r) * N + c0 + c] = 0;
@@ -1149,6 +1096,7 @@
     }
     for (const r of fullR) for (let c = 0; c < N; c++) nb[r * N + c] = -1;
     for (const c of fullC) for (let r = 0; r < N; r++) nb[r * N + c] = -1;
+    placeAndClear.lines = fullR.length + fullC.length;
     return nb;
   }
 
@@ -1175,10 +1123,12 @@
     return out;
   }
 
-  // Üç parça herhangi bir sırayla tahtaya sığıyor mu? (derinlik öncelikli arama; iş miktarı sınırlı)
-  function solvable(bd, shapes, budget) {
+  // Üç parça bir sırayla tahtaya sığıyor mu? need > 0 ise ilk need yerleştirmeden biri çizgi de patlatmalı.
+  // Derinlik öncelikli arama; iş miktarı (budget.left) sınırlı.
+  function solvable(bd, shapes, budget, need) {
+    need = need || 0;
     let nodes = 0;
-    const rec = (b, rest) => {
+    const rec = (b, rest, depth, ok) => {
       const seen = {};
       for (let k = 0; k < rest.length; k++) {
         const s = rest[k];
@@ -1188,70 +1138,72 @@
         for (let r = 0; r <= N - s.h; r++) {
           for (let c = 0; c <= N - s.w; c++) {
             if (!canPlaceOn(b, s, r, c)) continue;
-            if (!others.length) return true;
+            if (ok && !others.length) return true;
             if (++nodes > budget.left) return false;
-            if (rec(placeAndClear(b, s, r, c), others)) return true;
+            const nb = placeAndClear(b, s, r, c);
+            const ok2 = ok || (depth < need && placeAndClear.lines > 0);
+            if (!ok2 && depth + 1 >= need) continue; // patlatma şartı bu yolda artık sağlanamaz
+            if (!others.length) return true;
+            if (rec(nb, others, depth + 1, ok2)) return true;
             if (nodes > budget.left) return false;
           }
         }
       }
       return false;
     };
-    const ok = rec(bd, shapes);
+    const ok = rec(bd, shapes, 0, need <= 0);
     budget.left -= nodes;
     return ok;
   }
 
-  // Ağırlık profilleri (tier 0 küçük, 1 orta, 2 büyük parça; fill = tahtanın doluluğu 0..1)
-  function profileWeight(name, tier, fill) {
-    if (name === 'kolay') return tier === 0 ? 1.4 + 1.6 * fill : tier === 2 ? Math.max(0.05, 0.3 - 0.5 * fill) : 1 - 0.3 * fill;
-    if (name === 'yardim') return tier === 0 ? 1 + 1.6 * fill : tier === 2 ? Math.max(0.12, 0.6 - fill) : 1 - 0.3 * fill;
-    if (name === 'zor') return tier === 0 ? 0.65 : tier === 2 ? 2.2 : 1;
-    return 1; // düz
+  // Ağırlık: tahta doldukça küçük parçalar (tier 0) sıklaşır, büyükler (tier 2) seyrekleşir
+  function shapeWeight(s, fill) {
+    const k = s.tier === 0 ? 1.4 + 1.6 * fill : s.tier === 2 ? Math.max(0.05, 0.3 - 0.5 * fill) : 1 - 0.3 * fill;
+    return s.weight * k;
   }
 
-  function shapeWeight(s, fill, d, lv) {
-    const a = profileWeight(lv.from, s.tier, fill), b = profileWeight(lv.to, s.tier, fill);
-    return s.weight * (a + (b - a) * d);
-  }
-
-  function pickWeighted(pool, fill, d, lv) {
+  function pickWeighted(pool, fill) {
     let total = 0;
-    const ws = pool.map(s => { const w = shapeWeight(s, fill, d, lv); total += w; return w; });
+    const ws = pool.map(s => { const w = shapeWeight(s, fill); total += w; return w; });
     let x = Math.random() * total;
     for (let i = 0; i < pool.length; i++) { x -= ws[i]; if (x <= 0) return pool[i]; }
     return pool[pool.length - 1];
   }
 
-  function chooseTrayShapes(bd, score, lv) {
-    const d = difficulty(score, lv);
-    const mix = ab => ab[0] + (ab[1] - ab[0]) * d;
+  // need: kombo sürüyorsa kombonun bozulmasına kalan hamle sayısı, yoksa 0
+  function chooseTrayShapes(bd, mode, need) {
     let filled = 0;
     for (let i = 0; i < N * N; i++) if (bd[i] >= 0) filled++;
     const fill = filled / (N * N);
     const fitting = SHAPES.filter(s => fitsOn(bd, s));
     const small = fitting.filter(s => s.tier === 0);
     const clearers = clearingShapesOn(bd);
-    const guarantee = Math.random() < mix(lv.guarantee);
-    const limitBig = lv.bigLimit === 'hep' || (lv.bigLimit === 'azalan' && Math.random() >= d);
-    const budget = { left: 60000 };
+    let keep = need > 0 && Math.random() < mode.keep ? Math.min(need, 3) : 0;
+    if (keep === 1 && !clearers.length) keep = 0; // tek hamlede patlatabilecek şekil yok
+    const kb = { left: 30000 }, budget = { left: 60000 };
     let picks = null;
     for (let attempt = 0; attempt < 40; attempt++) {
-      // Garanti varken: yalnızca şu an sığan şekiller; 24 denemede olmazsa yalnızca küçükler
-      const base = !guarantee ? SHAPES : attempt < 24 && fitting.length ? fitting : small.length ? small : SHAPES;
+      // yalnızca şu an sığan şekiller; 24 denemede olmazsa yalnızca küçükler
+      const base = attempt < 24 && fitting.length ? fitting : small.length ? small : SHAPES;
       picks = [];
       let big = false;
       for (let i = 0; i < 3; i++) {
-        let pool = clearers.length && Math.random() < mix(i === 0 ? lv.assist1 : lv.assist2) ? clearers : base;
-        if (big && limitBig) { const rest = pool.filter(q => q.tier < 2); if (rest.length) pool = rest; }
-        const s = pickWeighted(pool, fill, d, lv);
+        let pool = clearers.length && Math.random() < (i === 0 ? mode.assist1 : mode.assist2) ? clearers : base;
+        if (big) { const rest = pool.filter(q => q.tier < 2); if (rest.length) pool = rest; }
+        const s = pickWeighted(pool, fill);
         if (s.tier === 2) big = true;
         picks.push(s);
       }
-      if (!guarantee) { if (picks.some(s => fitsOn(bd, s))) return picks; continue; } // eski kural: en az biri sığsın
-      if (budget.left <= 0 || solvable(bd, picks, budget)) return picks;
+      if (keep && attempt < 20 && kb.left > 0) { if (solvable(bd, picks, kb, keep)) return picks; continue; }
+      if (budget.left <= 0 || solvable(bd, picks, budget, 0)) return picks;
     }
     return picks;
+  }
+
+  // Puanlama: yerleştirilen her kare 1 puan (commitPlace); patlayan her kare 10 puan,
+  // aynı hamlede 2 çizgi 2 kat, 3 çizgi 3 kat...; hepsi kombo ile çarpılır. Kombo art arda her patlatmada 1 artar.
+  function clearPoints(cells, lines, combo) {
+    return 10 * cells * lines * combo;
   }
   /* === PARÇA ÜRETİCİ BİTİŞ === */
 
@@ -1260,7 +1212,7 @@
 
   function refreshFits() {
     for (const p of tray) if (p) p.fits = fitsAnywhere(p);
-    fxDirty = true;
+    trayDirty = true;
     wake();
   }
 
@@ -1292,20 +1244,24 @@
     return { uid: ++pieceUid, shape, cells: shape.cells, w: shape.w, h: shape.h, color, fits: true, enter: null, ret: null, hv: 0 };
   }
 
+  const ENTER = { delay: 60, stagger: 60, dur: 320 };
+  function startEnter(pieces) {
+    const now = performance.now();
+    pieces.forEach((p, i) => { if (p) p.enter = { t0: now + ENTER.delay + i * ENTER.stagger, dur: ENTER.dur }; });
+    animateTray(ENTER.delay + 2 * ENTER.stagger + ENTER.dur + 40);
+  }
+
   function generateTray() {
     const colors = shuffle([0, 1, 2, 3, 4]);
-    const pieces = shuffle(chooseTrayShapes(board, score, LEVELS[level]).map((s, i) => makePiece(s, colors[i])));
+    const pieces = shuffle(chooseTrayShapes(board, MODE, combo > 0 ? comboMoves : 0).map((s, i) => makePiece(s, colors[i])));
     for (const p of pieces) p.fits = fitsAnywhere(p);
-    const now = performance.now();
-    pieces.forEach((p, i) => { p.enter = { t0: now + 90 + i * 80, dur: 420 }; });
-    animate(720);
+    startEnter(pieces);
     return pieces;
   }
 
   function setBest(v) {
     best = v;
-    bests[level] = v;
-    store.set(K_BESTS, bests);
+    store.set(K_BEST, best);
   }
 
   function addScore(n) {
@@ -1323,12 +1279,13 @@
     if (ghosts.length) ghosts = ghosts.filter(g => idx.indexOf(g.r * N + g.c) < 0);
     for (const i of idx) { board[i] = p.color; pops.push({ i, t0: now, s: 1, fl: 0 }); }
     moves++;
-    addScore(p.cells.length); // yerleştirilen her blok +1
+    addScore(p.cells.length); // yerleştirilen her kare +1
     Sound.place();
     const ln = fullLines();
     if (ln.rows.length || ln.cols.length) {
       doClear(ln.rows, ln.cols, p, r0, c0, now);
     } else if (combo > 0) {
+      // Kombo: üst üste belirli sayıda hamlede patlatma olmazsa kombo bozulur
       comboMoves--;
       if (comboMoves <= 0) { combo = 0; comboMoves = 0; }
     }
@@ -1338,7 +1295,7 @@
     updateHud();
     updateHint();
     cellsDirty = true;
-    animate(260);
+    animate(220);
     if (!tray.some(t => t && t.fits)) triggerGameOver();
   }
 
@@ -1348,7 +1305,8 @@
     for (const c of cols) for (let r = 0; r < N; r++) set.add(r * N + c);
     const lines = rows.length + cols.length;
     combo += 1;
-    comboMoves = LEVELS[level].combo;
+    comboMoves = MODE.combo;
+    const pts = clearPoints(set.size, lines, combo);
     if (combo > maxCombo) maxCombo = combo;
     linesTotal += lines;
 
@@ -1360,40 +1318,36 @@
       let d = 99;
       if (rows.indexOf(r) >= 0) d = Math.min(d, Math.abs(c - pcC));
       if (cols.indexOf(c) >= 0) d = Math.min(d, Math.abs(r - pcR));
-      ghosts.push({ r, c, color: p.color, t0: now + 70 + d * 40, dur: 430, burst: false, s: 1, a: 1, fl: 0 });
+      ghosts.push({ r, c, color: p.color, t0: now + 50 + d * 30, dur: 340, burst: false, s: 1, a: 1, fl: 0 });
       board[i] = -1;
       sr += r; sc += c;
     }
     if (pops.length) pops = pops.filter(q => !set.has(q.i));
     const { bx, by, cs, bs } = L;
     const ox = bx + (pcC + 0.5) * cs, oy = by + (pcR + 0.5) * cs;
-    for (const r of rows) beams.push({ type: 'row', i: r, o: ox, t0: now + 40, dur: 560, color: p.color });
-    for (const c of cols) beams.push({ type: 'col', i: c, o: oy, t0: now + 40, dur: 560, color: p.color });
+    for (const r of rows) beams.push({ type: 'row', i: r, o: ox, t0: now + 30, dur: 440, color: p.color });
+    for (const c of cols) beams.push({ type: 'col', i: c, o: oy, t0: now + 30, dur: 440, color: p.color });
+    addScore(pts);
 
-    // Puan: patlayan kare başına 10 × çoklu çizgi çarpanı × kombo
-    const pts = Math.round(set.size * 10 * (1 + 0.5 * (lines - 1)) * combo);
     let perfect = true;
     for (let i = 0; i < N * N; i++) if (board[i] >= 0) { perfect = false; break; }
-    const bonus = perfect ? 300 : 0;
-    addScore(pts + bonus);
-
     // Yazılar patlayan bölgeye yakın ama tahtanın ortasına doğru çekilmiş durur
     const mx = bx + bs / 2;
     const fx = mx + (bx + (sc / set.size + 0.5) * cs - mx) * 0.3;
     const fy = clamp(by + (sr / set.size + 0.5) * cs, by + bs * 0.25, by + bs * 0.75);
-    const praise = perfect ? 'TERTEMİZ!' : lines >= 4 ? 'KAHRAMAN!' : lines === 3 ? 'MUHTEŞEM!' : lines === 2 ? 'HARİKA!' : combo >= 3 ? 'SÜPER!' : '';
+    const praise = perfect ? 'TERTEMİZ!' : lines >= 4 ? 'KAHRAMAN!' : lines === 3 ? 'MUHTEŞEM!' : lines === 2 ? 'HARİKA!' : combo >= 5 && combo % 5 === 0 ? 'SÜPER!' : '';
     const items = [];
     if (praise) items.push([praise, 'praise']);
-    if (combo >= 2) items.push(['KOMBO ×' + combo, 'combo']);
-    items.push(['+' + fmt(pts + bonus), 'pts']);
+    if (combo >= 2) items.push(['KOMBO ×' + fmt(combo), 'combo']);
+    items.push(['+' + fmt(pts), 'pts']);
     const gap = cs * 0.9, y0 = fy - ((items.length - 1) * gap) / 2;
-    items.forEach((it, k) => spawnFloat(it[0], fx, y0 + k * gap, it[1], k * 70));
+    items.forEach((it, k) => spawnFloat(it[0], fx, y0 + k * gap, it[1], k * 60));
 
-    shake(Math.min(9, 1.5 + lines * 1.8 + (combo - 1) * 0.8));
+    shake(Math.min(8, 1.5 + lines * 1.8));
     if (combo >= 2) bump(hudCombo, 1.3);
     Sound.clear(lines, combo);
     buzz(lines > 1 ? [18, 40, 22] : 16);
-    announce(lines + ' çizgi patladı, +' + fmt(pts + bonus) + ' puan' + (combo >= 2 ? ', kombo ×' + combo : '') + '. Skor ' + fmt(score) + '.');
+    announce(lines + ' çizgi patladı, +' + fmt(pts) + ' puan' + (combo >= 2 ? ', kombo ×' + combo : '') + '. Skor ' + fmt(score) + '.');
   }
 
   function triggerGameOver() {
@@ -1407,7 +1361,7 @@
     overTimer = setTimeout(showOver, 650 + N * 75 + 450);
     updateHud();
     updateHint();
-    fxDirty = true;
+    trayDirty = true;
     wake();
   }
 
@@ -1418,19 +1372,16 @@
     wake();
     const isNew = score > bestAtStart && score > 0;
     $('goBadge').hidden = !isNew;
-    const goLevel = $('goLevel');
-    goLevel.textContent = LEVELS[level].label;
-    goLevel.setAttribute('data-level', level);
     fitText($('goBest'), fmt(best), 18, 92);
     fitText($('goLines'), fmt(linesTotal), 18, 92);
-    fitText($('goCombo'), '×' + maxCombo, 18, 92);
+    fitText($('goCombo'), '×' + fmt(maxCombo), 18, 92);
     const goScore = $('goScore'), finalLen = fmt(score).length;
     goScore.style.fontSize = finalLen > 7 ? Math.max(28, Math.floor(300 / (0.62 * finalLen))) + 'px' : '';
     goScore.textContent = '0';
-    ovMenu.hidden = true;
+    ovConfirm.hidden = true;
     ovOver.hidden = false;
     setModal();
-    countUp($('goScore'), score, 900);
+    countUp(goScore, score, 900);
     setTimeout(() => focusDialog('btnAgain', 'goCard'), 60);
     announce('Kaybettin. Skor ' + fmt(score) + (isNew ? '. Yeni rekor!' : '.'));
   }
@@ -1451,7 +1402,6 @@
     board.fill(-1);
     score = 0; displayScore = 0;
     combo = 0; comboMoves = 0; maxCombo = 0; linesTotal = 0; moves = 0;
-    best = bests[level];
     bestAtStart = best;
     pops = []; ghosts = []; beams = []; particles = [];
     floatsEl.textContent = '';
@@ -1461,7 +1411,7 @@
     tray = generateTray();
     refreshFits();
     ovOver.hidden = true;
-    ovMenu.hidden = true;
+    ovConfirm.hidden = true;
     setModal();
     setScoreText(0);
     updateHud();
@@ -1475,7 +1425,7 @@
   function snapshotState() {
     if (gameState !== 'play') return null;
     return {
-      v: 1, level, board: Array.from(board), tray: tray.map(p => (p ? [p.shape.id, p.color] : null)),
+      v: 2, board: Array.from(board), tray: tray.map(p => (p ? [p.shape.id, p.color] : null)),
       score, combo, comboMoves, maxCombo, linesTotal, moves, bestAtStart
     };
   }
@@ -1488,7 +1438,7 @@
   // Kayıtlı oyunu geri yükler: verilen anlık durumdan ya da tarayıcı deposundan
   function load(s) {
     if (s === undefined) s = store.get(K_SAVE, null);
-    if (!s || s.v !== 1 || !Array.isArray(s.board) || s.board.length !== N * N || !Array.isArray(s.tray) || s.tray.length !== 3) return false;
+    if (!s || s.v !== 2 || !Array.isArray(s.board) || s.board.length !== N * N || !Array.isArray(s.tray) || s.tray.length !== 3) return false;
     try {
       const bd = new Int8Array(N * N);
       for (let i = 0; i < N * N; i++) {
@@ -1498,20 +1448,16 @@
       const t = s.tray.map(x => (Array.isArray(x) && SHAPE_BY_ID[x[0]] ? makePiece(SHAPE_BY_ID[x[0]], clamp(x[1] | 0, 0, PALETTE.length - 1)) : null));
       if (t.some(Boolean) && !t.some(p => p && fitsOn(bd, p))) return false; // kayıtlı oyun zaten bitmiş
       board.set(bd);
-      level = LEVEL_IDS.indexOf(s.level) >= 0 ? s.level : 'orta';
-      best = bests[level];
       pops = []; ghosts = []; beams = []; particles = [];
       score = Math.max(0, Math.floor(Number(s.score) || 0)); displayScore = score;
-      combo = Math.max(0, s.combo | 0); comboMoves = clamp(s.comboMoves | 0, 0, LEVELS[level].combo);
-      maxCombo = Math.max(0, s.maxCombo | 0); linesTotal = Math.max(0, s.linesTotal | 0); moves = Math.max(0, s.moves | 0);
+      combo = Math.max(0, Math.floor(Number(s.combo) || 0)); comboMoves = clamp(s.comboMoves | 0, 0, MODE.combo);
+      maxCombo = Math.max(0, Math.floor(Number(s.maxCombo) || 0)); linesTotal = Math.max(0, s.linesTotal | 0); moves = Math.max(0, s.moves | 0);
       bestAtStart = Number.isFinite(s.bestAtStart) ? s.bestAtStart : best;
       if (score > best) setBest(score);
       gameState = 'play';
       greyRows = -1;
-      const now = performance.now();
       tray = t.some(Boolean) ? t : generateTray();
-      tray.forEach((p, i) => { if (p) p.enter = { t0: now + 90 + i * 80, dur: 420 }; });
-      animate(720);
+      startEnter(tray);
       refreshFits();
       setScoreText(score);
       updateHud();
@@ -1543,24 +1489,95 @@
     try { if (navigator.vibrate) navigator.vibrate(pattern); } catch (e) { /* titreşim yok */ }
   }
 
-  /* ================= Ses (WebAudio ile sentez, dosya yok) ================= */
+  /* ================= Ses (WebAudio ile sentez, dosya yok) =================
+     iPhone notları: Safari, Web Audio seslerini telefon sessiz moddayken kısar. Ses oturumu "playback"e
+     alınınca (iOS 16.4+) sessiz modda da çalar; eski sürümlerde sessiz bir <audio> döngüsü aynı işi görür.
+     Ses bağlamı ancak bir dokunuş sırasında açılabildiği için her dokunuşta (touchend/click) yeniden denenir.
+     Telefon hoparlörü kalın sesleri pek vermediği için sesler 500 Hz üstünde ve sıkıştırıcıyla dolgun. */
   const Sound = {
-    ac: null, out: null, nbuf: null,
+    ac: null, out: null, nbuf: null, resumeT: -1e9, silentEl: null,
+    session() {
+      try {
+        if (navigator.audioSession && navigator.audioSession.type !== 'playback') navigator.audioSession.type = 'playback';
+      } catch (e) { /* desteklenmiyor */ }
+    },
+    ensure() {
+      if (this.ac) return true;
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return false;
+      try { this.ac = new AC({ latencyHint: 'interactive' }); } catch (e) {
+        try { this.ac = new AC(); } catch (e2) { return false; }
+      }
+      this.out = this.chain(this.ac);
+      return true;
+    },
+    // Ana çıkış: sıkıştırıcı, sesleri telefon hoparlöründe dolgun ve eşit yüksek tutar (patlamalarda cızırtı yapmadan)
+    chain(ac) {
+      const comp = ac.createDynamicsCompressor();
+      comp.threshold.value = -16; comp.knee.value = 12; comp.ratio.value = 4; comp.attack.value = 0.003; comp.release.value = 0.18;
+      const out = ac.createGain(), post = ac.createGain();
+      out.gain.value = 1;
+      post.gain.value = 1.65; // sıkıştırmadan sonra yükselt: telefon hoparlöründe net duyulsun
+      out.connect(comp);
+      comp.connect(post);
+      post.connect(ac.destination);
+      return out;
+    },
+    // Eski iOS: sessiz bir sesin döngüde çalınması, sessiz moddayken de Web Audio'nun duyulmasını sağlar
+    silentLoop() {
+      if (this.silentEl || navigator.audioSession || !/iP(hone|ad|od)|Macintosh/.test(navigator.userAgent) || !('ontouchend' in document)) return;
+      try {
+        const rate = 8000, n = 800, buf = new Uint8Array(44 + n);
+        const w32 = (o, v) => { buf[o] = v & 255; buf[o + 1] = (v >> 8) & 255; buf[o + 2] = (v >> 16) & 255; buf[o + 3] = (v >> 24) & 255; };
+        const w16 = (o, v) => { buf[o] = v & 255; buf[o + 1] = (v >> 8) & 255; };
+        [82, 73, 70, 70].forEach((c, i) => { buf[i] = c; }); w32(4, 36 + n);
+        [87, 65, 86, 69, 102, 109, 116, 32].forEach((c, i) => { buf[8 + i] = c; });
+        w32(16, 16); w16(20, 1); w16(22, 1); w32(24, rate); w32(28, rate); w16(32, 1); w16(34, 8);
+        [100, 97, 116, 97].forEach((c, i) => { buf[36 + i] = c; }); w32(40, n);
+        buf.fill(128, 44);
+        let bin = '';
+        for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]);
+        const el = document.createElement('audio');
+        el.src = 'data:audio/wav;base64,' + btoa(bin);
+        el.loop = true;
+        el.setAttribute('playsinline', '');
+        el.setAttribute('x-webkit-airplay', 'deny');
+        el.preload = 'auto';
+        this.silentEl = el;
+        const p = el.play();
+        if (p && p.catch) p.catch(() => { this.silentEl = null; });
+      } catch (e) { this.silentEl = null; }
+    },
+    // Dokunuş anında çağrılır: ses bağlamını açar; iOS'un sesi gerçekten açması için tek örneklik sessiz ses çalar
     unlock() {
       if (!soundOn) return;
-      try {
-        if (!this.ac) {
-          const AC = window.AudioContext || window.webkitAudioContext;
-          if (!AC) return;
-          this.ac = new AC();
-          this.out = this.ac.createGain();
-          this.out.gain.value = 0.5;
-          this.out.connect(this.ac.destination);
-        }
-        if (this.ac.state === 'suspended') this.ac.resume();
-      } catch (e) { /* ses desteklenmiyor */ }
+      this.session();
+      if (!this.ensure()) return;
+      const ac = this.ac;
+      if (ac.state !== 'running') {
+        try {
+          const p = ac.resume();
+          if (p && p.catch) p.catch(() => {});
+          this.resumeT = performance.now();
+          const b = ac.createBuffer(1, 1, ac.sampleRate), s = ac.createBufferSource();
+          s.buffer = b;
+          s.connect(ac.destination);
+          s.start(0);
+        } catch (e) { /* ses desteklenmiyor */ }
+      }
+      this.silentLoop();
+      if (this.silentEl && this.silentEl.paused && !document.hidden) { const p = this.silentEl.play(); if (p && p.catch) p.catch(() => {}); }
     },
-    ok() { return soundOn && this.ac && this.ac.state === 'running'; },
+    // Sayfa gizlenince ya da ses kapatılınca: sessiz döngü durur; ses kapalıysa ses oturumu da bırakılır (müzik uygulaması sürebilsin)
+    pause() {
+      if (this.silentEl && !this.silentEl.paused) this.silentEl.pause();
+      if (!soundOn && this.ac && this.ac.state === 'running') { const p = this.ac.suspend(); if (p && p.catch) p.catch(() => {}); }
+    },
+    // Bağlam açıksa ya da az önce açılması istendiyse çal: ilk dokunuşun sesi de kaybolmaz
+    ok() {
+      const ac = this.ac;
+      return soundOn && !!ac && (ac.state === 'running' || (ac.state !== 'closed' && performance.now() - this.resumeT < 500));
+    },
     tone(f, dur, type, vol, delay, f2) {
       if (!this.ok()) return;
       const ac = this.ac, t = ac.currentTime + (delay || 0);
@@ -1569,7 +1586,7 @@
       o.frequency.setValueAtTime(f, t);
       if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur);
       g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(vol, t + 0.012);
+      g.gain.exponentialRampToValueAtTime(vol, t + 0.008);
       g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
       o.connect(g); g.connect(this.out);
       o.start(t); o.stop(t + dur + 0.05);
@@ -1586,24 +1603,28 @@
       const src = ac.createBufferSource();
       src.buffer = this.nbuf;
       const f = ac.createBiquadFilter();
-      f.type = 'bandpass'; f.Q.value = 0.9;
+      f.type = 'bandpass'; f.Q.value = 0.8;
       f.frequency.setValueAtTime(freq, t);
-      f.frequency.exponentialRampToValueAtTime(Math.max(80, freq * 0.25), t + dur);
+      f.frequency.exponentialRampToValueAtTime(Math.max(300, freq * 0.3), t + dur);
       const g = ac.createGain();
       g.gain.setValueAtTime(vol, t);
       g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
       src.connect(f); f.connect(g); g.connect(this.out);
       src.start(t); src.stop(t + dur + 0.05);
     },
-    pick() { this.tone(740, 0.05, 'sine', 0.05); },
-    place() { this.tone(210, 0.13, 'triangle', 0.22, 0, 120); this.noise(0.05, 0.05, 2600); },
-    bad() { this.tone(190, 0.18, 'sine', 0.1, 0, 110); },
+    pick() { this.tone(988, 0.07, 'triangle', 0.38); },
+    place() { this.tone(660, 0.1, 'triangle', 0.55, 0, 440); this.noise(0.05, 0.3, 3600); },
+    bad() { this.tone(392, 0.16, 'square', 0.24, 0, 262); },
     clear(lines, cmb) {
-      const base = 523.25 * Math.pow(2, Math.min(cmb - 1, 12) / 12); // kombo arttıkça ton yükselir
-      [0, 4, 7, 12, 16].slice(0, Math.min(5, 2 + lines)).forEach((st, i) => this.tone(base * Math.pow(2, st / 12), 0.3, 'triangle', 0.12, i * 0.055));
-      this.noise(0.4, 0.13, 3200);
+      const base = 659.25 * Math.pow(2, Math.min(Math.max(cmb - 1, 0), 12) / 12); // kombo arttıkça ton yükselir
+      [0, 4, 7, 12, 16, 19].slice(0, Math.min(6, 2 + lines)).forEach((st, i) => {
+        const f = base * Math.pow(2, st / 12);
+        this.tone(f, 0.22, 'triangle', 0.3, i * 0.05);
+        this.tone(f * 2, 0.16, 'sine', 0.09, i * 0.05);
+      });
+      this.noise(0.3, 0.24, 5200);
     },
-    over() { [392, 330, 262, 196].forEach((f, i) => this.tone(f, 0.34, 'triangle', 0.13, i * 0.16)); }
+    over() { [784, 659, 523, 392].forEach((f, i) => this.tone(f, 0.3, 'triangle', 0.28, i * 0.15)); }
   };
 
   /* ================= Çizim ================= */
@@ -1688,17 +1709,18 @@
   }
 
   // Yeni konan bloklar kısa bir an büyüyüp parlar
+  const POP_MS = 200;
   function drawPops(now) {
     if (!pops.length) return;
     let k = 0;
-    for (const p of pops) if (now - p.t0 < 240) pops[k++] = p;
+    for (const p of pops) if (now - p.t0 < POP_MS) pops[k++] = p;
     pops.length = k;
     if (!k) return;
     const { bx, by, cs } = L;
     for (const p of pops) {
       const v = board[p.i];
       if (v < 0) continue;
-      const q = clamp((now - p.t0) / 240, 0, 1);
+      const q = clamp((now - p.t0) / POP_MS, 0, 1);
       p.s = 1 + 0.16 * (1 - easeOutCubic(q));
       p.fl = (1 - q) * 0.5;
       drawCell(ctx, sprites[v], bx + (p.i % N) * cs, by + ((p.i / N) | 0) * cs, cs, 1, p.s);
@@ -1724,7 +1746,7 @@
       const x = bx + g.c * cs, y = by + g.r * cs;
       if (p < 0) { g.s = 1; g.a = 1; g.fl = 0.18; }
       else {
-        if (!g.burst && p >= 0.28) { g.burst = true; burst(x + cs / 2, y + cs / 2, g.color, REDUCED ? 3 : 7); }
+        if (!g.burst && p >= 0.28) { g.burst = true; burst(x + cs / 2, y + cs / 2, g.color, REDUCED ? 2 : 5); }
         if (p < 0.28) { const q = p / 0.28; g.s = 1 + 0.18 * easeOutCubic(q); g.a = 1; g.fl = 0.18 + q * 0.72; }
         else { const q = (p - 0.28) / 0.72; g.s = 1.18 * (1 - 0.8 * easeInCubic(q)); g.a = 1 - q * q; g.fl = (1 - q) * 0.9; }
       }
@@ -1782,10 +1804,10 @@
   function burst(x, y, colorIdx, n) {
     const col = PALETTE[colorIdx], k = L.cs / 44;
     for (let i = 0; i < n; i++) {
-      const ang = rand(0, Math.PI * 2), sp = rand(70, 300) * k;
-      particles.push({ x, y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp - 110 * k, life: 0, max: rand(0.45, 0.95), size: rand(0.07, 0.17) * L.cs, color: Math.random() < 0.25 ? '#ffffff' : col.spark });
+      const ang = rand(0, Math.PI * 2), sp = rand(70, 280) * k;
+      particles.push({ x, y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp - 110 * k, life: 0, max: rand(0.4, 0.75), size: rand(0.07, 0.17) * L.cs, color: Math.random() < 0.25 ? '#ffffff' : col.spark });
     }
-    if (particles.length > 320) particles.splice(0, particles.length - 320);
+    if (particles.length > 240) particles.splice(0, particles.length - 240);
   }
 
   function updateParticles(dt) {
@@ -1826,13 +1848,9 @@
   function trayHome(i) { return { x: L.tray.x + L.slotW * (i + 0.5), y: L.tray.y + L.tray.h / 2 }; }
   function trayCs(p) { return Math.min(L.cs * 0.56, (L.slotW * 0.84) / p.w, (L.tray.h * 0.84) / p.h); }
 
+  // Raftaki parçanın görünümü: giriş animasyonu ya da (fareyle) üzerine gelince hafif büyüme
   function trayVisual(p, i, now) {
     const home = trayHome(i), tcs = trayCs(p);
-    if (p.ret) { // geri dönüş animasyonu
-      const r = p.ret, q = clamp((now - r.t0) / r.dur, 0, 1), e = easeOutCubic(q);
-      if (q >= 1) p.ret = null;
-      return { x: lerp(r.x, home.x, e), y: lerp(r.y, home.y, e), cs: lerp(r.cs, tcs, e), a: 1 };
-    }
     if (p.enter) { // yeni parça girişi
       const en = p.enter, q = clamp((now - en.t0) / en.dur, 0, 1);
       if (q >= 1) p.enter = null;
@@ -1844,15 +1862,36 @@
     return { x: home.x, y: home.y, cs: tcs * (1 + 0.08 * (p.hv || 0)), a: 1 };
   }
 
-  function drawTray(now) {
+  // Bırakılamayan parçanın rafa geri uçuşu (efekt katmanında; bitince raf katmanına döner)
+  function retVisual(p, i, now) {
+    const home = trayHome(i), tcs = trayCs(p), r = p.ret;
+    const q = clamp((now - r.t0) / r.dur, 0, 1), e = easeOutCubic(q);
+    return { x: lerp(r.x, home.x, e), y: lerp(r.y, home.y, e), cs: lerp(r.cs, tcs, e), done: q >= 1 };
+  }
+
+  // Raf katmanı: yalnızca raf değişince ya da giriş/üzerine gelme animasyonu sürerken çizilir
+  function renderTray(now) {
+    tctx.clearRect(TRG.x, TRG.y, TRG.w, TRG.h);
     for (let i = 0; i < 3; i++) {
       const p = tray[i];
-      if (!p || (drag && drag.piece === p)) continue;
+      if (!p || p.ret || (drag && drag.piece === p)) continue;
       const target = hoverSlot === i && !drag && gameState === 'play' ? 1 : 0;
       p.hv = (p.hv || 0) + (target - (p.hv || 0)) * Math.min(1, frameDt * 14);
       const v = trayVisual(p, i, now);
       if (v.a <= 0) continue;
-      drawPiece(ctx, p, v.x, v.y, v.cs, v.a, p.fits ? sprites[p.color] : greySprite);
+      drawPiece(tctx, p, v.x, v.y, v.cs, v.a, p.fits ? sprites[p.color] : greySprite);
+    }
+  }
+
+  function anyRet() { return !!((tray[0] && tray[0].ret) || (tray[1] && tray[1].ret) || (tray[2] && tray[2].ret)); }
+
+  function drawReturns(now) {
+    for (let i = 0; i < 3; i++) {
+      const p = tray[i];
+      if (!p || !p.ret) continue;
+      const v = retVisual(p, i, now);
+      if (v.done) { p.ret = null; trayDirty = true; continue; }
+      drawPiece(ctx, p, v.x, v.y, v.cs, 1, p.fits ? sprites[p.color] : greySprite);
     }
   }
 
@@ -1861,14 +1900,14 @@
     return { x: lerp(d.sx, d.tx, e), y: lerp(d.sy, d.ty, e), cs: lerp(d.scs, L.cs, e) };
   }
 
-  // Efekt katmanı: yalnızca animasyon sürerken ya da raf değişince çizilir
+  // Efekt katmanı: yalnızca efekt sürerken çizilir
   function renderFx(now) {
     ctx.clearRect(0, 0, L.W, L.H);
     drawPops(now);
     drawGhosts(now);
     drawBeams(now);
     drawParticles();
-    drawTray(now);
+    drawReturns(now);
   }
 
   function frame(now) {
@@ -1877,7 +1916,7 @@
     last = now;
     frameDt = dt;
     if (displayScore !== score) { // skor sayacı
-      displayScore = displayScore < score ? Math.min(score, displayScore + Math.max(1, (score - displayScore) * Math.min(1, dt * 9))) : score;
+      displayScore = displayScore < score ? Math.min(score, displayScore + Math.max(1, (score - displayScore) * Math.min(1, dt * 12))) : score;
       setScoreText(displayScore);
     }
     if (gameState !== 'play') { // oyun sonu: satırlar sırayla griye döner
@@ -1888,10 +1927,14 @@
     if (previewDirty) { previewDirty = false; renderPreview(); }
     if (particles.length) updateParticles(dt);
     if (cellsDirty) { cellsDirty = false; renderCells(); }
-    const busy = (drag !== null && now - drag.t0 < 170) || now < animUntil || ghosts.length > 0 || beams.length > 0 || particles.length > 0 || pops.length > 0;
+    const busy = (drag !== null && now - drag.t0 < 170) || now < animUntil || ghosts.length > 0 || beams.length > 0 || particles.length > 0 || pops.length > 0 || anyRet();
     if (fxDirty || busy || wasBusy) { fxDirty = false; renderFx(now); }
     wasBusy = busy;
-    if (busy || displayScore !== score || gameState === 'ending') wake();
+    // raf katmanı efektlerden sonra: geri uçuşu biten parça aynı karede rafa çizilir
+    const trayBusy = now < trayAnimUntil;
+    if (trayDirty || trayBusy || trayWasBusy) { trayDirty = false; renderTray(now); }
+    trayWasBusy = trayBusy;
+    if (busy || trayBusy || trayDirty || displayScore !== score || gameState === 'ending') wake();
     else last = 0;
   }
 
@@ -1952,12 +1995,12 @@
       commitPlace(d.piece, d.slot, d.preview.r, d.preview.c);
     } else {
       const v = dragVisual(d, now);
-      d.piece.ret = { x: v.x, y: v.y, cs: v.cs, t0: now, dur: 240 };
+      d.piece.ret = { x: v.x, y: v.y, cs: v.cs, t0: now, dur: 200 };
       if (!cancelled && overBoard(v.x, v.y)) Sound.bad();
-      animate(260);
+      animate(240);
     }
     updateHint();
-    fxDirty = true;
+    trayDirty = true;
     wake();
   }
 
@@ -1971,7 +2014,7 @@
     e.preventDefault();
     try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* yakalama yok */ }
     const p = tray[i], now = performance.now();
-    const v = trayVisual(p, i, now);
+    const v = p.ret ? retVisual(p, i, now) : trayVisual(p, i, now);
     p.ret = null; p.enter = null; p.hv = 0;
     drag = { piece: p, slot: i, pid: e.pointerId, type: e.pointerType || 'mouse', px: x, py: y, sx: v.x, sy: v.y, scs: v.cs, t0: now, tx: v.x, ty: v.y, preview: null };
     previewKey = '';
@@ -1983,7 +2026,8 @@
     Sound.pick();
     canvas.classList.remove('grab');
     canvas.classList.add('grabbing');
-    fxDirty = true; // raftaki parça artık elde
+    trayDirty = true; // raftaki parça artık elde
+    fxDirty = true;
     wake();
   });
 
@@ -1999,12 +2043,12 @@
     if (e.pointerType === 'mouse') {
       const i = slotAt(x, y);
       const h = gameState === 'play' && i >= 0 && tray[i] ? i : -1;
-      if (h !== hoverSlot) { hoverSlot = h; canvas.classList.toggle('grab', h >= 0); animate(400); }
+      if (h !== hoverSlot) { hoverSlot = h; canvas.classList.toggle('grab', h >= 0); animateTray(400); }
     }
   });
 
   canvas.addEventListener('pointerleave', () => {
-    if (!drag && hoverSlot !== -1) { hoverSlot = -1; canvas.classList.remove('grab'); animate(400); }
+    if (!drag && hoverSlot !== -1) { hoverSlot = -1; canvas.classList.remove('grab'); animateTray(400); }
   });
   canvas.addEventListener('pointerup', e => endDrag(e, false));
   canvas.addEventListener('pointercancel', e => endDrag(e, true));
@@ -2013,8 +2057,11 @@
   document.addEventListener('touchmove', e => { if (e.target === canvas || drag) e.preventDefault(); }, { passive: false });
   document.addEventListener('gesturestart', e => e.preventDefault());
   window.addEventListener('blur', () => { if (drag) endDrag(null, true); });
-  document.addEventListener('visibilitychange', () => { if (document.hidden && drag) endDrag(null, true); });
-  ['pointerdown', 'pointerup', 'keydown'].forEach(t => document.addEventListener(t, () => Sound.unlock(), { passive: true }));
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { if (drag) endDrag(null, true); Sound.pause(); }
+  });
+  // iPhone sesi yalnızca gerçek bir dokunuşun içinde açar: her dokunuş ve tıklamada yeniden dene
+  ['touchend', 'click', 'pointerup', 'keydown'].forEach(t => document.addEventListener(t, () => Sound.unlock(), { passive: true, capture: true }));
 
   /* ================= Düğmeler ================= */
   const ICON_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z" fill="currentColor" fill-opacity=".22"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
@@ -2026,51 +2073,23 @@
     btnSound.innerHTML = on ? ICON_ON : ICON_OFF;
     btnSound.setAttribute('aria-label', on ? 'Sesi kapat' : 'Sesi aç');
     btnSound.title = on ? 'Sesi kapat' : 'Sesi aç';
-    if (on && fromUser) Sound.unlock();
+    if (on && fromUser) { Sound.unlock(); Sound.pick(); }
+    if (!on) Sound.pause();
   }
 
   btnSound.addEventListener('click', () => setSound(!soundOn, true));
-
-  /* ================= Seviye menüsü ================= */
-  // mode: 'start' (oyun açılışı), 'restart' (oyun sırasında yeniden başlat), 'over' (oyun bitti)
-  let menuMode = 'start';
-  function openMenu(mode) {
-    menuMode = mode;
-    const canContinue = mode === 'start' && gameState === 'play' && moves > 0 && tray.some(Boolean);
-    const canCancel = mode === 'restart';
-    $('mnTitle').textContent = mode === 'restart' ? 'YENİ OYUN' : 'BLOK KAHRAMANI';
-    $('btnContinue').hidden = !canContinue;
-    if (canContinue) $('continueInfo').textContent = LEVELS[level].label + ' · ' + fmt(score) + ' puan';
-    $('menuNote').hidden = !(canCancel && moves > 0);
-    $('menuActions').hidden = !canCancel;
-    LEVEL_IDS.forEach(id => {
-      $('rec-' + id).textContent = fmt(bests[id]);
-      $('lvl-' + id).classList.toggle('last', id === level);
-    });
-    ovOver.hidden = true;
-    ovMenu.hidden = false;
+  btnRestart.addEventListener('click', () => {
+    if (gameState !== 'play' || moves === 0) { newGame(); return; }
+    ovConfirm.hidden = false;
     setModal();
-    focusDialog(canContinue ? 'btnContinue' : 'lvl-' + level, 'mnCard');
-  }
-
-  function closeMenu() {
-    if (!ovMenu.hidden) { ovMenu.hidden = true; setModal(); }
-  }
-
-  function startLevel(id) {
-    level = id;
-    store.set(K_LEVEL, id);
-    newGame(); // menüyü de kapatır
-  }
-
-  LEVEL_IDS.forEach(id => $('lvl-' + id).addEventListener('click', () => startLevel(id)));
-  $('btnContinue').addEventListener('click', closeMenu);
-  $('btnMenuCancel').addEventListener('click', closeMenu);
-  ovMenu.addEventListener('pointerdown', e => { if (e.target === ovMenu && menuMode === 'restart') closeMenu(); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !ovMenu.hidden && menuMode === 'restart') closeMenu(); });
-  btnRestart.addEventListener('click', () => openMenu(gameState === 'play' ? 'restart' : 'over'));
+    focusDialog('btnCancel', 'cfCard');
+  });
+  const closeConfirm = () => { ovConfirm.hidden = true; setModal(); };
+  $('btnCancel').addEventListener('click', closeConfirm);
+  $('btnConfirm').addEventListener('click', () => { ovConfirm.hidden = true; newGame(); });
   $('btnAgain').addEventListener('click', () => newGame());
-  $('btnLevels').addEventListener('click', () => openMenu('over'));
+  ovConfirm.addEventListener('pointerdown', e => { if (e.target === ovConfirm) closeConfirm(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !ovConfirm.hidden) closeConfirm(); });
 
   /* ================= Boyut değişimi ================= */
   let resizeRaf = 0;
@@ -2087,14 +2106,26 @@
     window.__test = {
       info: () => ({
         mode: L.mode, cs: L.cs, bx: L.bx, by: L.by, bs: L.bs, fp: L.fp, tray: L.tray, slotW: L.slotW, hud: L.hud,
-        state: gameState, score, combo, comboMoves, best, moves, linesTotal, maxCombo, level, bests: Object.assign({}, bests), menu: !ovMenu.hidden,
+        state: gameState, score, combo, comboMoves, best, moves, linesTotal, maxCombo,
         board: Array.from(board), pieces: tray.map(p => p && { id: p.shape.id, w: p.w, h: p.h, color: p.color, fits: p.fits, cells: p.cells })
       }),
       setBoard: arr => { board.set(arr); pops = []; refreshFits(); cellsDirty = true; fxDirty = true; wake(); },
       setTray: ids => { tray = ids.map((id, i) => (id ? makePiece(SHAPE_BY_ID[id], i % PALETTE.length) : null)); refreshFits(); },
       check: () => { if (!tray.some(p => p && p.fits)) triggerGameOver(); },
       setScore: n => { score = n; displayScore = n; if (score > best) setBest(score); setScoreText(score); updateHud(); },
-      newGame: lv => { if (lv) level = lv; newGame(); }
+      audio: () => ({ state: Sound.ac ? Sound.ac.state : 'none', session: navigator.audioSession ? navigator.audioSession.type : 'yok' }),
+      // Bir sesi çevrimdışı çizip tepe ve ortalama seviyesini döndürür (cızırtı / kısıklık denetimi)
+      renderSound: async (name, a, b) => {
+        const ac = new OfflineAudioContext(1, Math.round(44100 * 1.6), 44100);
+        const saved = [Sound.ac, Sound.out, Sound.nbuf, Sound.resumeT, soundOn];
+        Sound.ac = ac; Sound.out = Sound.chain(ac); Sound.nbuf = null; Sound.resumeT = performance.now(); soundOn = true;
+        try { Sound[name](a, b); } finally { [Sound.ac, Sound.out, Sound.nbuf, Sound.resumeT, soundOn] = saved; }
+        const d = (await ac.startRendering()).getChannelData(0);
+        let peak = 0, sq = 0, n = 0;
+        for (let i = 0; i < d.length; i++) { const v = Math.abs(d[i]); if (v > peak) peak = v; if (v > 0.001) { sq += v * v; n++; } }
+        return { peak: +peak.toFixed(3), rms: +(n ? Math.sqrt(sq / n) : 0).toFixed(3), ms: Math.round((n / 44100) * 1000) };
+      },
+      newGame
     };
   }
 
@@ -2110,11 +2141,9 @@
     booted = true;
     setSound(soundOn, false);
     layout();
-    // Sayfa canlı güncellendiyse oyuna kaldığı yerden devam; değilse seviye menüsü açılır
-    if (data && data.v === 1 && load(data)) { wake(); return; }
-    load(); // kayıtlı oyun varsa arkada yüklenir, menüde "Devam et" çıkar
-    updateHud();
-    openMenu('start');
+    // Kayıtlı oyun varsa kaldığı yerden devam, yoksa yeni oyun
+    const restored = (data && data.v === 2 && load(data)) || load();
+    if (!restored) newGame();
     wake();
   }
   if (hot && typeof hot.ready === 'function') {
