@@ -522,6 +522,13 @@
   const GREY  = { rgb: '120,135,170', light: '#6c7795', base: '#3b4566', dark: '#1a2137', face1: '#4a5577', face2: '#323b5a', rim: 'rgba(150,166,205,.35)', spark: '#8090b0', noGlow: true, gloss: 0.14 };
   const WHITE = { rgb: '220,240,255', light: '#ffffff', base: '#ffffff', dark: '#dcefff', face1: '#ffffff', face2: '#eaf6ff', rim: '#ffffff', spark: '#ffffff' };
 
+  // Fotoğraflı bloklar: yatay Z (s4b) ve tersi S (s4a) parçalarının her karesinde renk yerine fotoğraf (altın çerçeveli)
+  const PHOTO_SHAPES = new Set(['s4a', 's4b']);
+  const PHOTO_IDX = PALETTE.length;             // tahtada fotoğraflı karenin değeri
+  const PHOTO_COL = { rgb: '255,197,49', light: '#fff4bd', base: '#ffc531', dark: '#a86504', face1: '#ffda70', face2: '#f2a414', rim: 'rgba(255,246,206,.98)', spark: '#ffe38f' };
+  const COLORS = PALETTE.concat([PHOTO_COL]);   // renk numarasından renge (fotoğraf dahil): parıltı, ışın, kıvılcım
+  const PHOTO_SRC = '';
+
   // [kimlik, desen, ağırlık, kademe (0 küçük, 1 orta, 2 büyük)]
   const SHAPE_DEFS = [
     ['o1',  ['#'], 3, 0],
@@ -665,6 +672,7 @@
   const TRG = { x: 0, y: 0, w: 0, h: 0 };          // raf bölgesi
   const FP = 0.026, HUD_K = 0.255, G1 = 0.045, G2 = 0.055, TRAY_K = 0.4, PANEL_K = 0.95, GX = 0.06, MAX_B = 600;
   let sprites = [], greySprite = null, whiteSprite = null, spritePad = 0, dragSize = 0;
+  let photoImg = null, greyPhoto = null;
 
   function readInsets() {
     const s = getComputedStyle(probe);
@@ -855,6 +863,56 @@
     return { cv, size };
   }
 
+  // Fotoğraflı blok: neon parıltı, altın çerçeve, yuvarlak köşeli fotoğraf ve cam parlaması.
+  // grey: sığmayan parçada ve oyun sonunda kullanılan soluk, gri tonlu hali
+  function makePhotoSprite(grey) {
+    const cs = L.cs, dpr = L.dpr, pad = spritePad, size = cs + pad * 2, col = PHOTO_COL;
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = Math.ceil(size * dpr);
+    const g = cv.getContext('2d');
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const gap = Math.max(1, cs * 0.05);
+    const x = pad + gap, y = pad + gap, s = cs - gap * 2, r = s * 0.2;
+    if (!grey) { // neon parıltı
+      g.save();
+      g.shadowColor = 'rgba(' + col.rgb + ',0.95)';
+      g.shadowBlur = cs * 0.38 * dpr;
+      g.fillStyle = col.base;
+      rr(g, x, y, s, s, r); g.fill();
+      g.restore();
+    }
+    let gr = g.createLinearGradient(x, y, x + s, y + s);
+    gr.addColorStop(0, col.light); gr.addColorStop(0.5, col.base); gr.addColorStop(1, col.dark);
+    g.fillStyle = gr; rr(g, x, y, s, s, r); g.fill();
+    const b = s * 0.09, fx = x + b, fy = y + b, fs = s - 2 * b, fr = r * 0.7;
+    g.save();
+    rr(g, fx, fy, fs, fs, fr); g.clip();
+    g.imageSmoothingEnabled = true;
+    g.imageSmoothingQuality = 'high';
+    g.drawImage(photoImg, fx, fy, fs, fs);
+    gr = g.createLinearGradient(0, fy, 0, fy + fs * 0.5);
+    gr.addColorStop(0, 'rgba(255,255,255,0.28)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = gr; g.fillRect(fx, fy, fs, fs * 0.5);
+    g.restore();
+    g.lineWidth = Math.max(1, cs * 0.02); g.strokeStyle = 'rgba(110,55,0,0.6)';
+    rr(g, fx, fy, fs, fs, fr); g.stroke();
+    const lw = Math.max(1, cs * 0.03);
+    g.lineWidth = lw; g.strokeStyle = col.rim;
+    rr(g, x + lw / 2, y + lw / 2, s - lw, s - lw, r); g.stroke();
+    if (grey) { // gri tonlu ve koyu: diğer sığmayan parçalarla aynı soluk görünüm
+      try {
+        g.setTransform(1, 0, 0, 1, 0, 0);
+        const im = g.getImageData(0, 0, cv.width, cv.height), d = im.data;
+        for (let k = 0; k < d.length; k += 4) {
+          const l = d[k] * 0.3 + d[k + 1] * 0.59 + d[k + 2] * 0.11;
+          d[k] = l * 0.42 + 22; d[k + 1] = l * 0.44 + 26; d[k + 2] = l * 0.5 + 44;
+        }
+        g.putImageData(im, 0, 0);
+      } catch (e) { freeCanvas(cv); return null; }
+    }
+    return { cv, size };
+  }
+
   // iPhone eski tuvallerin belleğini geç bırakıyor; yenilerini kurmadan önce boşalt
   function freeCanvas(cv) { if (cv) { cv.width = 0; cv.height = 0; } }
 
@@ -862,10 +920,30 @@
     sprites.forEach(s => freeCanvas(s.cv));
     if (greySprite) freeCanvas(greySprite.cv);
     if (whiteSprite) freeCanvas(whiteSprite.cv);
+    if (greyPhoto) freeCanvas(greyPhoto.cv);
     sprites = PALETTE.map(makeSprite);
+    sprites.push(photoImg ? makePhotoSprite(false) : makeSprite(PHOTO_COL)); // fotoğraf yüklenene kadar altın blok
     greySprite = makeSprite(GREY);
+    greyPhoto = photoImg ? makePhotoSprite(true) : null;
     whiteSprite = makeSprite(WHITE);
   }
+
+  // Sığmayan parçada / oyun sonunda karenin soluk hali (fotoğraflı kare fotoğrafını korur)
+  function greyOf(v) { return v === PHOTO_IDX && greyPhoto ? greyPhoto : greySprite; }
+
+  // Fotoğraf kodun içinde (internetsiz de çalışır); çözülünce bloklar yeniden çizilir
+  (function loadPhoto() {
+    const img = new Image();
+    img.onload = () => {
+      photoImg = img;
+      if (!sprites.length) return; // yerleşim henüz kurulmadı: ilk kurulumda kullanılır
+      buildSprites();
+      if (drag) prepareDragEl(drag.piece);
+      cellsDirty = true; trayDirty = true; fxDirty = true; previewKey = ''; previewDirty = true;
+      wake();
+    };
+    img.src = PHOTO_SRC;
+  })();
 
   // Sabit arka katman: yıldızlar, tahta çerçevesi, boş hücreler, altın köşeler, raf paneli
   function drawBg() {
@@ -1250,6 +1328,7 @@
   }
 
   function makePiece(shape, color) {
+    if (PHOTO_SHAPES.has(shape.id)) color = PHOTO_IDX;
     return { uid: ++pieceUid, shape, cells: shape.cells, w: shape.w, h: shape.h, color, fits: true, enter: null, ret: null, hv: 0 };
   }
 
@@ -1327,7 +1406,8 @@
       let d = 99;
       if (rows.indexOf(r) >= 0) d = Math.min(d, Math.abs(c - pcC));
       if (cols.indexOf(c) >= 0) d = Math.min(d, Math.abs(r - pcR));
-      ghosts.push({ r, c, color: p.color, t0: now + 50 + d * 30, dur: 340, burst: false, s: 1, a: 1, fl: 0 });
+      const own = p.color === PHOTO_IDX || board[i] === PHOTO_IDX;
+      ghosts.push({ r, c, color: own ? board[i] : p.color, t0: now + 50 + d * 30, dur: 340, burst: false, s: 1, a: 1, fl: 0 });
       board[i] = -1;
       sr += r; sc += c;
     }
@@ -1452,7 +1532,7 @@
       const bd = new Int8Array(N * N);
       for (let i = 0; i < N * N; i++) {
         const v = s.board[i];
-        bd[i] = Number.isInteger(v) && v >= 0 && v < PALETTE.length ? v : -1;
+        bd[i] = Number.isInteger(v) && v >= 0 && v < COLORS.length ? v : -1;
       }
       const t = s.tray.map(x => (Array.isArray(x) && SHAPE_BY_ID[x[0]] ? makePiece(SHAPE_BY_ID[x[0]], clamp(x[1] | 0, 0, PALETTE.length - 1)) : null));
       if (t.some(Boolean) && !t.some(p => p && fitsOn(bd, p))) return false; // kayıtlı oyun zaten bitmiş
@@ -1661,7 +1741,7 @@
       for (let c = 0; c < N; c++) {
         const v = board[r * N + c];
         if (v < 0) continue;
-        drawCell(cctx, r < gr ? greySprite : sprites[v], bx + c * cs, by + r * cs, cs, 1, 1);
+        drawCell(cctx, r < gr ? greyOf(v) : sprites[v], bx + c * cs, by + r * cs, cs, 1, 1);
       }
     }
   }
@@ -1675,7 +1755,7 @@
     cvHl.classList.toggle('pulse', willClear);
     if (!pv) return;
     const { r: r0, c: c0, rows, cols } = pv;
-    const p = drag.piece, spr = sprites[p.color], col = PALETTE[p.color];
+    const p = drag.piece, spr = sprites[p.color], col = COLORS[p.color];
     const { bx, by, cs, bs } = L;
     if (willClear) {
       hctx.fillStyle = 'rgba(' + col.rgb + ',0.2)';
@@ -1688,7 +1768,8 @@
       const mark = (r, c) => { const i = r * N + c; if (!seen.has(i) && board[i] >= 0) { seen.add(i); marked.push(i); } };
       for (const r of rows) for (let c = 0; c < N; c++) mark(r, c);
       for (const c of cols) for (let r = 0; r < N; r++) mark(r, c);
-      for (const i of marked) drawCell(hctx, spr, bx + (i % N) * cs, by + ((i / N) | 0) * cs, cs, 1, 1);
+      // fotoğraflı parçada kareler kendi renginde kalır; fotoğraflı kare hiçbir parçada boyanmaz
+      for (const i of marked) drawCell(hctx, p.color === PHOTO_IDX || board[i] === PHOTO_IDX ? sprites[board[i]] : spr, bx + (i % N) * cs, by + ((i / N) | 0) * cs, cs, 1, 1);
       hctx.globalCompositeOperation = 'lighter';
       for (const i of marked) drawCell(hctx, whiteSprite, bx + (i % N) * cs, by + ((i / N) | 0) * cs, cs, 0.2, 1);
       hctx.globalCompositeOperation = 'source-over';
@@ -1791,7 +1872,7 @@
       const a = p < 0.15 ? p / 0.15 : 1 - (p - 0.15) / 0.85;
       const grow = easeOutCubic(Math.min(1, p * 2.4));
       const th = cs * (0.5 + 0.9 * p);
-      const rgb = PALETTE[b.color].rgb;
+      const rgb = COLORS[b.color].rgb;
       ctx.globalAlpha = clamp(a, 0, 1) * 0.9;
       if (b.type === 'row') {
         const cy = by + (b.i + 0.5) * cs;
@@ -1811,7 +1892,7 @@
   }
 
   function burst(x, y, colorIdx, n) {
-    const col = PALETTE[colorIdx], k = L.cs / 44;
+    const col = COLORS[colorIdx], k = L.cs / 44;
     for (let i = 0; i < n; i++) {
       const ang = rand(0, Math.PI * 2), sp = rand(70, 280) * k;
       particles.push({ x, y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp - 110 * k, life: 0, max: rand(0.4, 0.75), size: rand(0.07, 0.17) * L.cs, color: Math.random() < 0.25 ? '#ffffff' : col.spark });
@@ -1888,7 +1969,7 @@
       p.hv = (p.hv || 0) + (target - (p.hv || 0)) * Math.min(1, frameDt * 14);
       const v = trayVisual(p, i, now);
       if (v.a <= 0) continue;
-      drawPiece(tctx, p, v.x, v.y, v.cs, v.a, p.fits ? sprites[p.color] : greySprite);
+      drawPiece(tctx, p, v.x, v.y, v.cs, v.a, p.fits ? sprites[p.color] : greyOf(p.color));
     }
   }
 
@@ -1900,7 +1981,7 @@
       if (!p || !p.ret) continue;
       const v = retVisual(p, i, now);
       if (v.done) { p.ret = null; trayDirty = true; continue; }
-      drawPiece(ctx, p, v.x, v.y, v.cs, 1, p.fits ? sprites[p.color] : greySprite);
+      drawPiece(ctx, p, v.x, v.y, v.cs, 1, p.fits ? sprites[p.color] : greyOf(p.color));
     }
   }
 
@@ -2115,7 +2196,7 @@
     window.__test = {
       info: () => ({
         mode: L.mode, cs: L.cs, bx: L.bx, by: L.by, bs: L.bs, fp: L.fp, tray: L.tray, slotW: L.slotW, hud: L.hud,
-        state: gameState, score, combo, comboMoves, best, moves, linesTotal, maxCombo,
+        state: gameState, score, combo, comboMoves, best, moves, linesTotal, maxCombo, photo: !!photoImg, photoIdx: PHOTO_IDX,
         board: Array.from(board), pieces: tray.map(p => p && { id: p.shape.id, w: p.w, h: p.h, color: p.color, fits: p.fits, cells: p.cells })
       }),
       setBoard: arr => { board.set(arr); pops = []; refreshFits(); cellsDirty = true; fxDirty = true; wake(); },
