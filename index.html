@@ -522,12 +522,18 @@
   const GREY  = { rgb: '120,135,170', light: '#6c7795', base: '#3b4566', dark: '#1a2137', face1: '#4a5577', face2: '#323b5a', rim: 'rgba(150,166,205,.35)', spark: '#8090b0', noGlow: true, gloss: 0.14 };
   const WHITE = { rgb: '220,240,255', light: '#ffffff', base: '#ffffff', dark: '#dcefff', face1: '#ffffff', face2: '#eaf6ff', rim: '#ffffff', spark: '#ffffff' };
 
-  // Fotoğraflı bloklar: yatay Z (s4b) ve tersi S (s4a) parçalarının her karesinde renk yerine fotoğraf (altın çerçeveli)
-  const PHOTO_SHAPES = new Set(['s4a', 's4b']);
-  const PHOTO_IDX = PALETTE.length;             // tahtada fotoğraflı karenin değeri
+  // Fotoğraflı bloklar: bu parçaların her karesinde renk yerine fotoğraf (altın çerçeveli)
+  //   1. fotoğraf: yatay Z (s4b) ve tersi S (s4a); 2. fotoğraf: iki yönlü çapraz üçlü (d3a, d3b)
   const PHOTO_COL = { rgb: '255,197,49', light: '#fff4bd', base: '#ffc531', dark: '#a86504', face1: '#ffda70', face2: '#f2a414', rim: 'rgba(255,246,206,.98)', spark: '#ffe38f' };
-  const COLORS = PALETTE.concat([PHOTO_COL]);   // renk numarasından renge (fotoğraf dahil): parıltı, ışın, kıvılcım
-  const PHOTO_SRC = '';
+  const PHOTOS = [
+    { shapes: ['s4a', 's4b'], src: '' },
+    { shapes: ['d3a', 'd3b'], src: '' }
+  ];
+  const PHOTO_IDX = PALETTE.length;               // ilk fotoğraflı karenin tahtadaki değeri (5, 6, ...)
+  const PHOTO_OF = {};                            // parça kimliği → fotoğraflı karenin değeri
+  PHOTOS.forEach((ph, k) => ph.shapes.forEach(id => { PHOTO_OF[id] = PHOTO_IDX + k; }));
+  const COLORS = PALETTE.concat(PHOTOS.map(() => PHOTO_COL)); // renk numarasından renge: parıltı, ışın, kıvılcım
+  const isPhoto = v => v >= PHOTO_IDX;
 
   // [kimlik, desen, ağırlık, kademe (0 küçük, 1 orta, 2 büyük)]
   const SHAPE_DEFS = [
@@ -560,14 +566,16 @@
     ['t4b', ['.#.', '###'], 2.2, 1],
     ['t4c', ['#.', '##', '#.'], 2.2, 1],
     ['t4d', ['.#', '##', '.#'], 2.2, 1],
-    ['s4a', ['.##', '##.'], 0.8, 1],
-    ['s4b', ['##.', '.##'], 0.8, 1],
+    ['s4a', ['.##', '##.'], 2.8, 1],
+    ['s4b', ['##.', '.##'], 2.8, 1],
     ['s4c', ['#.', '##', '.#'], 0.8, 1],
     ['s4d', ['.#', '##', '#.'], 0.8, 1],
     ['l5a', ['#..', '#..', '###'], 1, 2],
     ['l5b', ['..#', '..#', '###'], 1, 2],
     ['l5c', ['###', '#..', '#..'], 1, 2],
-    ['l5d', ['###', '..#', '..#'], 1, 2]
+    ['l5d', ['###', '..#', '..#'], 1, 2],
+    ['d3a', ['..#', '.#.', '#..'], 2.8, 1],
+    ['d3b', ['#..', '.#.', '..#'], 2.8, 1]
   ];
 
   /* ================= Yardımcılar ================= */
@@ -672,7 +680,8 @@
   const TRG = { x: 0, y: 0, w: 0, h: 0 };          // raf bölgesi
   const FP = 0.026, HUD_K = 0.255, G1 = 0.045, G2 = 0.055, TRAY_K = 0.4, PANEL_K = 0.95, GX = 0.06, MAX_B = 600;
   let sprites = [], greySprite = null, whiteSprite = null, spritePad = 0, dragSize = 0;
-  let photoImg = null, greyPhoto = null;
+  const photoImgs = [];
+  let greyPhotos = [];
 
   function readInsets() {
     const s = getComputedStyle(probe);
@@ -865,7 +874,7 @@
 
   // Fotoğraflı blok: neon parıltı, altın çerçeve, yuvarlak köşeli fotoğraf ve cam parlaması.
   // grey: sığmayan parçada ve oyun sonunda kullanılan soluk, gri tonlu hali
-  function makePhotoSprite(grey) {
+  function makePhotoSprite(photoImg, grey) {
     const cs = L.cs, dpr = L.dpr, pad = spritePad, size = cs + pad * 2, col = PHOTO_COL;
     const cv = document.createElement('canvas');
     cv.width = cv.height = Math.ceil(size * dpr);
@@ -920,30 +929,30 @@
     sprites.forEach(s => freeCanvas(s.cv));
     if (greySprite) freeCanvas(greySprite.cv);
     if (whiteSprite) freeCanvas(whiteSprite.cv);
-    if (greyPhoto) freeCanvas(greyPhoto.cv);
-    sprites = PALETTE.map(makeSprite);
-    sprites.push(photoImg ? makePhotoSprite(false) : makeSprite(PHOTO_COL)); // fotoğraf yüklenene kadar altın blok
+    greyPhotos.forEach(g => g && freeCanvas(g.cv));
+    // fotoğraflı bloklar renklerden sonra (5, 6, ...); fotoğraf yüklenene kadar altın blok
+    sprites = PALETTE.map(makeSprite).concat(PHOTOS.map((ph, k) => (photoImgs[k] ? makePhotoSprite(photoImgs[k], false) : makeSprite(PHOTO_COL))));
     greySprite = makeSprite(GREY);
-    greyPhoto = photoImg ? makePhotoSprite(true) : null;
+    greyPhotos = PHOTOS.map((ph, k) => (photoImgs[k] ? makePhotoSprite(photoImgs[k], true) : null));
     whiteSprite = makeSprite(WHITE);
   }
 
   // Sığmayan parçada / oyun sonunda karenin soluk hali (fotoğraflı kare fotoğrafını korur)
-  function greyOf(v) { return v === PHOTO_IDX && greyPhoto ? greyPhoto : greySprite; }
+  function greyOf(v) { return (isPhoto(v) && greyPhotos[v - PHOTO_IDX]) || greySprite; }
 
-  // Fotoğraf kodun içinde (internetsiz de çalışır); çözülünce bloklar yeniden çizilir
-  (function loadPhoto() {
+  // Fotoğraflar kodun içinde (internetsiz de çalışır); her biri çözülünce bloklar yeniden çizilir
+  PHOTOS.forEach((ph, k) => {
     const img = new Image();
     img.onload = () => {
-      photoImg = img;
+      photoImgs[k] = img;
       if (!sprites.length) return; // yerleşim henüz kurulmadı: ilk kurulumda kullanılır
       buildSprites();
       if (drag) prepareDragEl(drag.piece);
       cellsDirty = true; trayDirty = true; fxDirty = true; previewKey = ''; previewDirty = true;
       wake();
     };
-    img.src = PHOTO_SRC;
-  })();
+    img.src = ph.src;
+  });
 
   // Sabit arka katman: yıldızlar, tahta çerçevesi, boş hücreler, altın köşeler, raf paneli
   function drawBg() {
@@ -1328,7 +1337,7 @@
   }
 
   function makePiece(shape, color) {
-    if (PHOTO_SHAPES.has(shape.id)) color = PHOTO_IDX;
+    if (PHOTO_OF[shape.id] !== undefined) color = PHOTO_OF[shape.id];
     return { uid: ++pieceUid, shape, cells: shape.cells, w: shape.w, h: shape.h, color, fits: true, enter: null, ret: null, hv: 0 };
   }
 
@@ -1406,7 +1415,7 @@
       let d = 99;
       if (rows.indexOf(r) >= 0) d = Math.min(d, Math.abs(c - pcC));
       if (cols.indexOf(c) >= 0) d = Math.min(d, Math.abs(r - pcR));
-      const own = p.color === PHOTO_IDX || board[i] === PHOTO_IDX;
+      const own = isPhoto(p.color) || isPhoto(board[i]);
       ghosts.push({ r, c, color: own ? board[i] : p.color, t0: now + 50 + d * 30, dur: 340, burst: false, s: 1, a: 1, fl: 0 });
       board[i] = -1;
       sr += r; sc += c;
@@ -1769,7 +1778,7 @@
       for (const r of rows) for (let c = 0; c < N; c++) mark(r, c);
       for (const c of cols) for (let r = 0; r < N; r++) mark(r, c);
       // fotoğraflı parçada kareler kendi renginde kalır; fotoğraflı kare hiçbir parçada boyanmaz
-      for (const i of marked) drawCell(hctx, p.color === PHOTO_IDX || board[i] === PHOTO_IDX ? sprites[board[i]] : spr, bx + (i % N) * cs, by + ((i / N) | 0) * cs, cs, 1, 1);
+      for (const i of marked) drawCell(hctx, isPhoto(p.color) || isPhoto(board[i]) ? sprites[board[i]] : spr, bx + (i % N) * cs, by + ((i / N) | 0) * cs, cs, 1, 1);
       hctx.globalCompositeOperation = 'lighter';
       for (const i of marked) drawCell(hctx, whiteSprite, bx + (i % N) * cs, by + ((i / N) | 0) * cs, cs, 0.2, 1);
       hctx.globalCompositeOperation = 'source-over';
@@ -2196,7 +2205,7 @@
     window.__test = {
       info: () => ({
         mode: L.mode, cs: L.cs, bx: L.bx, by: L.by, bs: L.bs, fp: L.fp, tray: L.tray, slotW: L.slotW, hud: L.hud,
-        state: gameState, score, combo, comboMoves, best, moves, linesTotal, maxCombo, photo: !!photoImg, photoIdx: PHOTO_IDX,
+        state: gameState, score, combo, comboMoves, best, moves, linesTotal, maxCombo, photo: PHOTOS.every((ph, k) => !!photoImgs[k]), photoIdx: PHOTO_IDX, photoOf: PHOTO_OF,
         board: Array.from(board), pieces: tray.map(p => p && { id: p.shape.id, w: p.w, h: p.h, color: p.color, fits: p.fits, cells: p.cells })
       }),
       setBoard: arr => { board.set(arr); pops = []; refreshFits(); cellsDirty = true; fxDirty = true; wake(); },
