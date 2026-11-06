@@ -44,7 +44,7 @@
        cells  – yerleşmiş bloklar: yalnızca tahta değişince
        hl     – yerleştirme önizlemesi: yalnızca parçanın oturacağı kare değişince
        trayCv – raftaki parçalar: yalnızca raf değişince ya da giriş animasyonunda
-       game   – patlama efektleri (daha düşük çözünürlükte): yalnızca efekt sürerken
+       game   – patlama efektleri (en çok 2x çözünürlükte): yalnızca efekt sürerken
        dragEl – sürüklenen parça: bir kez çizilir, GPU'da kaydırılır
      Skor, kombo ve uçan yazılar HTML/CSS; süreğen animasyonlar yalnızca opaklık/dönüşüm kullanır. */
   :root {
@@ -107,13 +107,27 @@
     height: 2px;
     margin: -1px 0 0 -1px;
     border-radius: 50%;
-    background: #d4e7ff;
-    box-shadow: 0 0 4px 1px rgba(166, 205, 255, .75);
+    background: var(--star1, #d4e7ff);
+    box-shadow: 0 0 4px 1px var(--star1g, rgba(166, 205, 255, .75));
     opacity: .2;
     will-change: opacity;
     animation: twinkle 3s ease-in-out infinite alternate;
   }
-  #twinkle i.g { background: #ffe8a8; box-shadow: 0 0 4px 1px rgba(255, 215, 106, .75); }
+  #twinkle i.g { background: var(--star2, #ffe8a8); box-shadow: 0 0 4px 1px var(--star2g, rgba(255, 215, 106, .75)); }
+
+  /* Tema arka planı: her tema kendi katmanında; yeni tema eskisinin üstünde belirir (yalnızca opaklık) */
+  #themeBg { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+  #themeBg .tb { position: absolute; inset: 0; will-change: opacity; }
+  /* Tema değişirken kısa bir parlama */
+  #flash {
+    position: fixed;
+    inset: 0;
+    z-index: 4;
+    pointer-events: none;
+    opacity: 0;
+    background: radial-gradient(70% 55% at 50% 45%, rgba(255, 255, 255, .42), rgba(255, 255, 255, .1) 55%, rgba(255, 255, 255, 0) 80%);
+    will-change: opacity;
+  }
 
   /* Kombo sürerken tahtanın çevresindeki altın hale */
   #ringWrap { position: absolute; left: 0; top: 0; width: 0; height: 0; opacity: 0; transition: opacity .35s ease; pointer-events: none; }
@@ -223,6 +237,7 @@
   }
   .float-praise { font-size: calc(var(--cs) * .95); color: #ffd040; text-shadow: 0 .06em 0 #8a4200, 0 0 .07em rgba(4, 8, 26, .95), 0 0 .3em rgba(255, 170, 30, .95), 0 0 .8em rgba(255, 130, 20, .5); }
   .float-combo { font-size: calc(var(--cs) * .72); color: #63eeff; text-shadow: 0 .06em 0 #0b3a80, 0 0 .07em rgba(4, 8, 26, .95), 0 0 .3em rgba(43, 227, 255, .95), 0 0 .8em rgba(43, 140, 255, .5); }
+  .float-theme { font-size: calc(var(--cs) * .5); letter-spacing: .05em; color: #ffffff; text-shadow: 0 0 .07em rgba(4, 8, 26, .95), 0 0 .35em var(--accent, rgba(255, 197, 49, .9)), 0 0 .9em var(--accent, rgba(255, 197, 49, .5)); }
   .float-pts { font-size: calc(var(--cs) * .62); color: #ffffff; text-shadow: 0 .06em 0 #0d2c6e, 0 0 .07em rgba(4, 8, 26, .95), 0 0 .3em rgba(80, 190, 255, .95); }
 
   .icon-btn {
@@ -436,6 +451,7 @@
     </div>
   </div>
 </noscript>
+<div id="themeBg" aria-hidden="true"></div>
 <div id="twinkle" aria-hidden="true"></div>
 
 <div id="hud">
@@ -467,6 +483,7 @@
 
 <div id="hint" aria-hidden="true" hidden><b>PARÇALARI SÜRÜKLE</b><span>Satır ya da sütun doldur, patlat!</span></div>
 <div id="floats" aria-hidden="true"></div>
+<div id="flash" aria-hidden="true"></div>
 
 <button id="btnRestart" class="icon-btn" type="button" aria-label="Yeniden başlat" title="Yeniden başlat">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1"/><path d="M3.5 4v5h5"/></svg>
@@ -523,17 +540,111 @@
   const WHITE = { rgb: '220,240,255', light: '#ffffff', base: '#ffffff', dark: '#dcefff', face1: '#ffffff', face2: '#eaf6ff', rim: '#ffffff', spark: '#ffffff' };
 
   // Fotoğraflı bloklar: bu parçaların her karesinde renk yerine fotoğraf (altın çerçeveli)
-  //   1. fotoğraf: yatay Z (s4b) ve tersi S (s4a); 2. fotoğraf: iki yönlü çapraz üçlü (d3a, d3b)
+  //   1. fotoğraf: Z ve S, yatay ve dik halleriyle (s4a-d); 2. fotoğraf: iki yönlü çapraz üçlü (d3a, d3b)
   const PHOTO_COL = { rgb: '255,197,49', light: '#fff4bd', base: '#ffc531', dark: '#a86504', face1: '#ffda70', face2: '#f2a414', rim: 'rgba(255,246,206,.98)', spark: '#ffe38f' };
   const PHOTOS = [
-    { shapes: ['s4a', 's4b'], src: '' },
+    { shapes: ['s4a', 's4b', 's4c', 's4d'], src: '' },
     { shapes: ['d3a', 'd3b'], src: '' }
   ];
   const PHOTO_IDX = PALETTE.length;               // ilk fotoğraflı karenin tahtadaki değeri (5, 6, ...)
   const PHOTO_OF = {};                            // parça kimliği → fotoğraflı karenin değeri
   PHOTOS.forEach((ph, k) => ph.shapes.forEach(id => { PHOTO_OF[id] = PHOTO_IDX + k; }));
-  const COLORS = PALETTE.concat(PHOTOS.map(() => PHOTO_COL)); // renk numarasından renge: parıltı, ışın, kıvılcım
+  let COLORS = PALETTE.concat(PHOTOS.map(() => PHOTO_COL)); // renk numarasından renge: parıltı, ışın, kıvılcım
   const isPhoto = v => v >= PHOTO_IDX;
+
+  /* ================= Temalar =================
+     Her 5.000 puanda bir sonraki temaya geçilir (10 tema, sonra başa döner). Tema; arka planı, tahta çerçevesini,
+     boş kareleri, yıldızları, raf panelini ve blok renklerini değiştirir. Fotoğraflı bloklar hep altın çerçeveli. */
+  const THEME_STEP = 5000;
+  const hexRgb = h => { const n = parseInt(h.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; };
+  const rgbHex = (r, g, b) => '#' + [r, g, b].map(v => Math.round(Math.min(255, Math.max(0, v))).toString(16).padStart(2, '0')).join('');
+  const mixHex = (a, b, t) => { const x = hexRgb(a), y = hexRgb(b); return rgbHex(x[0] + (y[0] - x[0]) * t, x[1] + (y[1] - x[1]) * t, x[2] + (y[2] - x[2]) * t); };
+  const rgbaOf = (h, a) => 'rgba(' + hexRgb(h).join(',') + ',' + a + ')';
+  function rgbToHsl(r, g, b) {
+    r /= 255; g /= 255; b /= 255;
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2;
+    if (mx === mn) return [0, 0, l];
+    const d = mx - mn, s = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn);
+    const h = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    return [h / 6, s, l];
+  }
+  function hslHex(h, s, l) {
+    const f = n => { const k = (n + h * 12) % 12, a = s * Math.min(l, 1 - l); return 255 * (l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1))); };
+    return rgbHex(f(0), f(8), f(4));
+  }
+  // Tek bir ana renkten bloğun tüm tonları (açık kenar, koyu kenar, yüz, parlama, kıvılcım)
+  function deriveColor(hex) {
+    const [r, g, b] = hexRgb(hex), [h, s, l] = rgbToHsl(r, g, b), L2 = k => hslHex(h, s, Math.min(1, Math.max(0, k)));
+    return {
+      rgb: r + ',' + g + ',' + b, base: hex,
+      light: L2(l + (1 - l) * 0.6), dark: L2(l * 0.5), face1: L2(l + (1 - l) * 0.24), face2: L2(l * 0.86),
+      rim: rgbaOf(L2(l + (1 - l) * 0.75), 0.95), spark: L2(l + (1 - l) * 0.45)
+    };
+  }
+  const THEMES = [
+    { name: 'NEON KAHRAMAN', blocks: null,
+      bg: { base: '#050817', top: '#070b22', bottom: '#03050e', glowTop: '43,110,255', glowBottom: '255,165,40', glowL: '24,212,242', glowR: '110,112,255' },
+      halo: '43,120,255', fill: '#0a1335', panel: ['#0f1c4b', '#070d28'], frame: ['95,215,255', '50,110,255', '255,197,49'],
+      cell: [['#13224f', '#0c1738'], ['#111e4a', '#0a1433']], cellLine: '120,175,255', bracket: '#ffc531',
+      stars: ['#a6cdff', '#ffd76a'], tray: ['16,30,80', '8,14,40'], trayLine: '92,160,255' },
+    { name: 'OKYANUS', blocks: ['#00c2c7', '#2f7bff', '#3ee6a8', '#ff7a6b', '#ffd166'],
+      bg: { base: '#03141c', top: '#05202b', bottom: '#020b10', glowTop: '0,170,200', glowBottom: '255,122,107', glowL: '62,230,168', glowR: '47,123,255' },
+      halo: '0,190,210', fill: '#062430', panel: ['#0a2f3d', '#051820'], frame: ['120,255,230', '0,150,200', '255,209,102'],
+      cell: [['#0b3442', '#072530'], ['#0a2e3b', '#06202a']], cellLine: '120,230,240', bracket: '#ffd166',
+      stars: ['#9ff3ff', '#ffd9a0'], tray: ['10,60,75', '4,25,32'], trayLine: '100,220,230' },
+    { name: 'GÜN BATIMI', blocks: ['#ff8a3d', '#ff4f81', '#ffd23f', '#b35cff', '#4fb8ff'],
+      bg: { base: '#1a0a1f', top: '#2a0d2b', bottom: '#0d0510', glowTop: '255,110,80', glowBottom: '255,79,129', glowL: '255,210,63', glowR: '179,92,255' },
+      halo: '255,100,90', fill: '#2a0f28', panel: ['#3a1636', '#1c0a1c'], frame: ['255,200,90', '255,90,120', '180,90,255'],
+      cell: [['#3b1838', '#271025'], ['#341533', '#220d21']], cellLine: '255,170,170', bracket: '#ffd23f',
+      stars: ['#ffc4d6', '#ffe08a'], tray: ['70,20,60', '30,8,28'], trayLine: '255,140,160' },
+    { name: 'ORMAN', blocks: ['#3ddc84', '#a3e635', '#22c3a6', '#ffb347', '#ff6f59'],
+      bg: { base: '#04140b', top: '#072112', bottom: '#020a05', glowTop: '61,220,132', glowBottom: '255,179,71', glowL: '34,195,166', glowR: '163,230,53' },
+      halo: '60,200,120', fill: '#0a2616', panel: ['#0d3320', '#061a10'], frame: ['170,255,150', '40,170,100', '255,179,71'],
+      cell: [['#0f3a24', '#0a2918'], ['#0d3320', '#082414']], cellLine: '140,230,160', bracket: '#ffb347',
+      stars: ['#b8ffcf', '#ffe6a0'], tray: ['15,60,35', '6,26,15'], trayLine: '120,220,150' },
+    { name: 'ŞEKER', blocks: ['#ff7eb6', '#7ef0c8', '#b79cff', '#ffb86b', '#6ec8ff'],
+      bg: { base: '#170a1c', top: '#25102c', bottom: '#0c0510', glowTop: '255,126,182', glowBottom: '126,240,200', glowL: '183,156,255', glowR: '110,200,255' },
+      halo: '255,126,182', fill: '#2c1334', panel: ['#3a1a44', '#1d0c22'], frame: ['255,190,220', '190,140,255', '126,240,200'],
+      cell: [['#3b1b45', '#2a1232'], ['#35183f', '#24102c']], cellLine: '255,180,220', bracket: '#7ef0c8',
+      stars: ['#ffd1e8', '#c8fff0'], tray: ['70,25,80', '32,10,38'], trayLine: '255,150,210' },
+    { name: 'LAV', blocks: ['#ff4530', '#ff9f1c', '#ffd60a', '#ff2e7e', '#a259ff'],
+      bg: { base: '#1a0503', top: '#2b0805', bottom: '#0d0201', glowTop: '255,69,48', glowBottom: '255,159,28', glowL: '255,46,126', glowR: '255,214,10' },
+      halo: '255,80,40', fill: '#2d0b07', panel: ['#3d0f0a', '#1f0705'], frame: ['255,220,120', '255,90,40', '255,46,126'],
+      cell: [['#40120c', '#2c0b07'], ['#3a100b', '#260906']], cellLine: '255,150,110', bracket: '#ffd60a',
+      stars: ['#ffb199', '#ffe680'], tray: ['80,20,12', '35,8,5'], trayLine: '255,120,80' },
+    { name: 'BUZUL', blocks: ['#5fd4ff', '#e6f6ff', '#4f7cff', '#62f0d0', '#b79dff'],
+      bg: { base: '#06101c', top: '#0b1a2e', bottom: '#030810', glowTop: '150,220,255', glowBottom: '200,240,255', glowL: '98,240,208', glowR: '79,124,255' },
+      halo: '150,210,255', fill: '#0e1e38', panel: ['#13284a', '#0a1628'], frame: ['230,250,255', '120,190,255', '160,140,255'],
+      cell: [['#14294a', '#0e1d36'], ['#122544', '#0c1a30']], cellLine: '190,225,255', bracket: '#e6f6ff',
+      stars: ['#ffffff', '#cfe9ff'], tray: ['25,45,80', '10,20,38'], trayLine: '170,210,255' },
+    { name: 'GALAKSİ', blocks: ['#c04bff', '#ff4fd8', '#4f6bff', '#3ee8ff', '#ffe14d'],
+      bg: { base: '#0a0518', top: '#140a2c', bottom: '#05020c', glowTop: '140,70,255', glowBottom: '255,79,216', glowL: '62,232,255', glowR: '192,75,255' },
+      halo: '150,80,255', fill: '#1a0d38', panel: ['#24124a', '#110826'], frame: ['255,140,240', '150,90,255', '62,232,255'],
+      cell: [['#26134d', '#1a0d38'], ['#221145', '#170b32']], cellLine: '200,160,255', bracket: '#ff4fd8',
+      stars: ['#e2c8ff', '#fff3a0'], tray: ['45,20,90', '20,8,42'], trayLine: '190,140,255' },
+    { name: 'ALTIN SARAY', blocks: ['#ffcc33', '#ff9933', '#e6194b', '#3cb4ff', '#2ee6a0'],
+      bg: { base: '#120c03', top: '#1f1405', bottom: '#090601', glowTop: '255,190,60', glowBottom: '230,25,75', glowL: '255,153,51', glowR: '60,180,255' },
+      halo: '255,190,60', fill: '#261b08', panel: ['#33240a', '#1a1205'], frame: ['255,240,180', '255,190,60', '200,120,20'],
+      cell: [['#36270c', '#261b08'], ['#302209', '#211706']], cellLine: '255,215,140', bracket: '#ffe08a',
+      stars: ['#ffe7a8', '#ffffff'], tray: ['70,50,15', '30,20,6'], trayLine: '255,200,110' },
+    { name: 'SİBER', blocks: ['#39ff14', '#00e5ff', '#ff2bd6', '#fff700', '#7a5cff'],
+      bg: { base: '#020806', top: '#03120c', bottom: '#010403', glowTop: '57,255,20', glowBottom: '255,43,214', glowL: '0,229,255', glowR: '57,255,20' },
+      halo: '57,255,20', fill: '#051a13', panel: ['#06231a', '#03110c'], frame: ['57,255,20', '0,229,255', '255,43,214'],
+      cell: [['#072a1f', '#041a13'], ['#062519', '#03160f']], cellLine: '57,255,120', bracket: '#39ff14',
+      stars: ['#8dffb0', '#9ff9ff'], tray: ['8,50,35', '3,22,15'], trayLine: '57,255,120' }
+  ];
+  // İlk tema oyunun özgün, elle ayarlanmış renklerini kullanır; diğerleri ana renklerden türetilir
+  const PALETTE0 = PALETTE.slice();
+  THEMES.forEach(t => { t.palette = t.blocks ? t.blocks.map(deriveColor) : PALETTE0; });
+  const themeFor = sc => Math.floor(sc / THEME_STEP) % THEMES.length;
+  function themeCss(t) {
+    const b = t.bg;
+    return 'radial-gradient(120% 65% at 50% -12%, rgba(' + b.glowTop + ',.30), transparent 62%),' +
+      'radial-gradient(90% 45% at 50% 112%, rgba(' + b.glowBottom + ',.13), transparent 62%),' +
+      'radial-gradient(55% 40% at -5% 55%, rgba(' + b.glowL + ',.08), transparent 70%),' +
+      'radial-gradient(55% 40% at 105% 45%, rgba(' + b.glowR + ',.08), transparent 70%),' +
+      'linear-gradient(180deg, ' + b.top + ' 0%, ' + b.base + ' 55%, ' + b.bottom + ' 100%) ' + b.base;
+  }
 
   // [kimlik, desen, ağırlık, kademe (0 küçük, 1 orta, 2 büyük)]
   const SHAPE_DEFS = [
@@ -568,8 +679,8 @@
     ['t4d', ['.#', '##', '.#'], 2.2, 1],
     ['s4a', ['.##', '##.'], 2.8, 1],
     ['s4b', ['##.', '.##'], 2.8, 1],
-    ['s4c', ['#.', '##', '.#'], 0.8, 1],
-    ['s4d', ['.#', '##', '#.'], 0.8, 1],
+    ['s4c', ['#.', '##', '.#'], 2.8, 1],
+    ['s4d', ['.#', '##', '#.'], 2.8, 1],
     ['l5a', ['#..', '#..', '###'], 1, 2],
     ['l5b', ['..#', '..#', '###'], 1, 2],
     ['l5c', ['###', '#..', '#..'], 1, 2],
@@ -637,6 +748,9 @@
   let pips = [];
   const hint = $('hint');
   const floatsEl = $('floats');
+  const themeBgEl = $('themeBg');
+  const flashEl = $('flash');
+  const metaTheme = document.querySelector('meta[name="theme-color"]');
   const btnRestart = $('btnRestart');
   const btnSound = $('btnSound');
   const ovOver = $('ovOver');
@@ -729,15 +843,15 @@
   let layoutKey = '';
   function layout() {
     const W = Math.max(1, window.innerWidth), H = Math.max(1, window.innerHeight);
-    // 2x çözünürlük üst sınırı: 3x ekranlarda çizilecek piksel sayısı yarı yarıya azalır, görüntü yine keskin kalır
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    // Tam cihaz çözünürlüğü (iPhone'larda 3x): bloklar, fotoğraflar ve yazılar keskin
+    const dpr = Math.min(window.devicePixelRatio || 1, 3);
     const ins = readInsets();
     const key = [W, H, dpr, ins.t, ins.r, ins.b, ins.l].join('|');
     if (key === layoutKey) return; // boyut aynıysa hiçbir şeyi yeniden kurma
     layoutKey = key;
     L.W = W; L.H = H; L.dpr = dpr;
-    // Hızlı hareket eden efektler (patlama, kıvılcım) daha düşük çözünürlükte: her karede daha az piksel
-    L.fxDpr = Math.min(dpr, 1.5);
+    // Hızlı hareket eden efektler (patlama, kıvılcım) en çok 2x: her karede daha az piksel, gözle fark edilmez
+    L.fxDpr = Math.min(dpr, 2);
     const m = clamp(Math.min(W, H) * 0.03, 8, 22);
     const aw = Math.max(120, W - ins.l - ins.r - 2 * m);
     const ah = Math.max(120, H - ins.t - ins.b - 2 * m);
@@ -956,14 +1070,15 @@
 
   // Sabit arka katman: yıldızlar, tahta çerçevesi, boş hücreler, altın köşeler, raf paneli
   function drawBg() {
-    const g = bctx, { cs, bs, fp, dpr } = L;
+    const g = bctx, { cs, bs, fp, dpr } = L, T = THEMES[Math.max(0, themeIdx)];
+    g.clearRect(0, 0, L.W, L.H);
     // yıldızlar (üst bilgi alanına düşenler atlanır)
     const n = Math.round(clamp((L.W * L.H) / 9000, 40, 140)), hd = L.hud;
     for (let i = 0; i < n; i++) {
       const x = Math.random() * L.W, y = Math.random() * L.H;
       if (x > hd.x - 4 && x < hd.x + hd.w + 4 && y > hd.y - 4 && y < hd.y + hd.h + 4) continue;
       g.globalAlpha = rand(0.14, 0.55);
-      g.fillStyle = Math.random() < 0.18 ? '#ffd76a' : '#a6cdff';
+      g.fillStyle = Math.random() < 0.18 ? T.stars[1] : T.stars[0];
       const r = rand(0.6, 1.7);
       g.fillRect(x, y, r, r);
     }
@@ -971,21 +1086,21 @@
     const x0 = L.bx - fp, y0 = L.by - fp, outer = bs + 2 * fp, R = fp * 1.5;
     // dış mavi hale
     g.save();
-    g.shadowColor = 'rgba(43,120,255,0.55)';
+    g.shadowColor = 'rgba(' + T.halo + ',0.55)';
     g.shadowBlur = cs * 0.8 * dpr;
-    g.fillStyle = '#0a1335';
+    g.fillStyle = T.fill;
     rr(g, x0, y0, outer, outer, R); g.fill();
     g.restore();
     // panel
     let gr = g.createLinearGradient(0, y0, 0, y0 + outer);
-    gr.addColorStop(0, '#0f1c4b'); gr.addColorStop(1, '#070d28');
+    gr.addColorStop(0, T.panel[0]); gr.addColorStop(1, T.panel[1]);
     g.fillStyle = gr; rr(g, x0, y0, outer, outer, R); g.fill();
     // camgöbeğinden altına kenarlık
     const lw = Math.max(1.5, cs * 0.045);
     gr = g.createLinearGradient(x0, y0, x0 + outer, y0 + outer);
-    gr.addColorStop(0, 'rgba(95,215,255,0.95)');
-    gr.addColorStop(0.5, 'rgba(50,110,255,0.55)');
-    gr.addColorStop(1, 'rgba(255,197,49,0.9)');
+    gr.addColorStop(0, 'rgba(' + T.frame[0] + ',0.95)');
+    gr.addColorStop(0.5, 'rgba(' + T.frame[1] + ',0.55)');
+    gr.addColorStop(1, 'rgba(' + T.frame[2] + ',0.9)');
     g.lineWidth = lw; g.strokeStyle = gr;
     rr(g, x0 + lw / 2, y0 + lw / 2, outer - lw, outer - lw, R - lw / 2); g.stroke();
     // boş hücreler
@@ -995,20 +1110,20 @@
         const x = L.bx + c * cs + gap, y = L.by + r * cs + gap, s = cs - gap * 2;
         const alt = (r + c) & 1;
         gr = g.createLinearGradient(0, y, 0, y + s);
-        gr.addColorStop(0, alt ? '#111e4a' : '#13224f');
-        gr.addColorStop(1, alt ? '#0a1433' : '#0c1738');
+        gr.addColorStop(0, T.cell[alt][0]);
+        gr.addColorStop(1, T.cell[alt][1]);
         g.fillStyle = gr; rr(g, x, y, s, s, cr); g.fill();
-        g.lineWidth = 1; g.strokeStyle = 'rgba(120,175,255,0.10)';
+        g.lineWidth = 1; g.strokeStyle = 'rgba(' + T.cellLine + ',0.10)';
         rr(g, x + 0.5, y + 0.5, s - 1, s - 1, cr); g.stroke();
       }
     }
     // altın köşe braketleri
     const bl = cs * 0.8, off = Math.max(3, fp * 0.5), br = Math.min(R + off, bl * 0.7);
     g.save();
-    g.strokeStyle = '#ffc531';
+    g.strokeStyle = T.bracket;
     g.lineWidth = Math.max(2, cs * 0.065);
     g.lineCap = 'round';
-    g.shadowColor = 'rgba(255,197,49,0.9)';
+    g.shadowColor = rgbaOf(T.bracket, 0.9);
     g.shadowBlur = cs * 0.3 * dpr;
     const xa = x0 - off, ya = y0 - off, xb = x0 + outer + off, yb = y0 + outer + off;
     const corner = (cx, cy, dx, dy) => {
@@ -1024,14 +1139,14 @@
     const t = L.tray;
     rr(g, t.x, t.y, t.w, t.h, cs * 0.45);
     gr = g.createLinearGradient(0, t.y, 0, t.y + t.h);
-    gr.addColorStop(0, 'rgba(16,30,80,0.42)');
-    gr.addColorStop(1, 'rgba(8,14,40,0.25)');
+    gr.addColorStop(0, 'rgba(' + T.tray[0] + ',0.42)');
+    gr.addColorStop(1, 'rgba(' + T.tray[1] + ',0.25)');
     g.fillStyle = gr;
     g.fill();
-    g.strokeStyle = 'rgba(92,160,255,0.14)';
+    g.strokeStyle = 'rgba(' + T.trayLine + ',0.14)';
     g.lineWidth = 1;
     g.stroke();
-    g.strokeStyle = 'rgba(92,160,255,0.08)';
+    g.strokeStyle = 'rgba(' + T.trayLine + ',0.08)';
     for (let i = 1; i < 3; i++) {
       const x = Math.round(t.x + L.slotW * i) + 0.5;
       g.beginPath(); g.moveTo(x, t.y + t.h * 0.2); g.lineTo(x, t.y + t.h * 0.8); g.stroke();
@@ -1116,18 +1231,24 @@
     try { el.animate([{ transform: 'scale(' + s + ')' }, { transform: 'scale(1)' }], { duration: 280, easing: 'cubic-bezier(.2,.8,.3,1)' }); } catch (e) { /* desteklenmiyor */ }
   }
 
-  function spawnFloat(text, x, y, kind, delay) {
+  function spawnFloat(text, x, y, kind, delay, dur) {
     const el = document.createElement('div');
     el.className = 'float float-' + kind;
     el.textContent = text;
     el.style.left = x + 'px';
     el.style.top = y + 'px';
     if (delay) el.style.animationDelay = delay + 'ms';
+    if (dur) el.style.animationDuration = dur + 'ms';
     const done = () => { if (el.parentNode) el.parentNode.removeChild(el); };
     el.addEventListener('animationend', done);
-    setTimeout(done, 1400 + (delay || 0)); // animasyon olayı gelmezse yine de temizle
+    setTimeout(done, (dur || 950) + 450 + (delay || 0)); // animasyon olayı gelmezse yine de temizle
     floatsEl.appendChild(el);
-    while (floatsEl.childElementCount > 9) floatsEl.removeChild(floatsEl.firstElementChild);
+    // Uzun yazı tahtaya sığsın: gerekirse küçült, kenardan taşmayacak yere kaydır
+    const max = L.bs * 0.86, w = el.offsetWidth;
+    if (w > max) el.style.fontSize = ((parseFloat(getComputedStyle(el).fontSize) * max) / w).toFixed(1) + 'px';
+    const half = Math.min(w, max) / 2;
+    el.style.left = clamp(x, L.bx + half, L.bx + L.bs - half) + 'px';
+    while (floatsEl.childElementCount > 10) floatsEl.removeChild(floatsEl.firstElementChild);
   }
 
   // Ekran sarsıntısı: oyun alanı katmanları birlikte, GPU'da kaydırılır (yeniden çizim yok)
@@ -1303,6 +1424,22 @@
   }
   /* === PARÇA ÜRETİCİ BİTİŞ === */
 
+  // Patlatınca çıkan cesaretlendirici yazılar: büyük patlatmada daha coşkulu; aynı yazı art arda gelmez
+  const PRAISE = [
+    null,
+    ['GÜZEL!', 'BRAVO!', 'AFERİN!', 'DEVAM ET!', 'SÜPERSİN!', 'HARİKASIN!', 'ÇOK İYİ!', 'İYİ GİDİYORSUN!'],
+    ['HARİKASIN!', 'SÜPERSİN!', 'MÜKEMMEL!', 'ŞAHANE!', 'MUHTEŞEMSİN!', 'BAYILDIM!'],
+    ['MÜKEMMEL!', 'İNANILMAZ!', 'MUHTEŞEMSİN!', 'EFSANESİN!', 'DURDURULAMAZSIN!']
+  ];
+  const STREAK = ['DEVAM ET!', 'DURMAK YOK!', 'SERİYİ BOZMA!', 'ATEŞ GİBİSİN!'];
+  let lastPraise = '';
+  function pickPraise(lines, cmb) {
+    const pool = lines === 1 && cmb >= 5 && cmb % 5 === 0 ? STREAK : PRAISE[Math.min(3, lines)]; // her 5 komboda seriyi kutla
+    const options = pool.filter(t => t !== lastPraise);
+    lastPraise = options[(Math.random() * options.length) | 0];
+    return lastPraise;
+  }
+
   function canPlace(p, r0, c0) { return canPlaceOn(board, p, r0, c0); }
   function fitsAnywhere(p) { return fitsOn(board, p); }
 
@@ -1393,7 +1530,59 @@
     updateHint();
     cellsDirty = true;
     animate(220);
+    // Her 5.000 puanda tema değişir: patlatma animasyonu eski renklerle bitsin, sonra geçilsin
+    if (themeFor(score) !== themeIdx) queueTheme(ln.rows.length || ln.cols.length ? 520 : 80);
     if (!tray.some(t => t && t.fits)) triggerGameOver();
+  }
+
+  let themeIdx = -1, themeTimer = 0;
+  function queueTheme(delay) {
+    clearTimeout(themeTimer);
+    themeTimer = setTimeout(() => {
+      const k = themeFor(score);
+      if (gameState === 'play' && k !== themeIdx) setTheme(k, true);
+    }, delay);
+  }
+
+  // Temayı uygular: blok renkleri, arka plan katmanı, yıldızlar, tahta; animated ise parlama ve tema adı
+  function setTheme(k, animated) {
+    if (k === themeIdx) return;
+    themeIdx = k;
+    const T = THEMES[k], anim = animated && !REDUCED;
+    for (let i = 0; i < PALETTE.length; i++) PALETTE[i] = T.palette[i];
+    COLORS = PALETTE.concat(PHOTOS.map(() => PHOTO_COL));
+    const layer = document.createElement('div');
+    layer.className = 'tb';
+    layer.style.background = themeCss(T);
+    const old = Array.prototype.slice.call(themeBgEl.children);
+    themeBgEl.appendChild(layer);
+    if (anim && typeof layer.animate === 'function') {
+      try { layer.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 700, easing: 'ease-out' }); } catch (e) { /* desteklenmiyor */ }
+      setTimeout(() => old.forEach(o => { if (o.parentNode) o.parentNode.removeChild(o); }), 750);
+    } else {
+      old.forEach(o => o.parentNode.removeChild(o));
+    }
+    const rs = document.documentElement.style;
+    rs.setProperty('--star1', mixHex(T.stars[0], '#ffffff', 0.5));
+    rs.setProperty('--star1g', rgbaOf(T.stars[0], 0.75));
+    rs.setProperty('--star2', mixHex(T.stars[1], '#ffffff', 0.5));
+    rs.setProperty('--star2g', rgbaOf(T.stars[1], 0.75));
+    rs.setProperty('--accent', rgbaOf(T.bracket, 0.9));
+    if (metaTheme) metaTheme.setAttribute('content', T.bg.base);
+    if (sprites.length) {
+      for (let i = 0; i < PALETTE.length; i++) { freeCanvas(sprites[i].cv); sprites[i] = makeSprite(PALETTE[i]); }
+      drawBg();
+      if (drag) prepareDragEl(drag.piece);
+      cellsDirty = true; trayDirty = true; fxDirty = true; previewKey = ''; previewDirty = true;
+      wake();
+    }
+    if (anim) {
+      if (typeof flashEl.animate === 'function') {
+        try { flashEl.animate([{ opacity: 0 }, { opacity: 1, offset: 0.2 }, { opacity: 0 }], { duration: 700, easing: 'ease-out' }); } catch (e) { /* desteklenmiyor */ }
+      }
+      spawnFloat('TEMA: ' + T.name, L.bx + L.bs / 2, L.by + L.bs * 0.13, 'theme', 0, 1700);
+      announce('Yeni tema: ' + T.name);
+    }
   }
 
   function doClear(rows, cols, p, r0, c0, now) {
@@ -1433,9 +1622,7 @@
     const mx = bx + bs / 2;
     const fx = mx + (bx + (sc / set.size + 0.5) * cs - mx) * 0.3;
     const fy = clamp(by + (sr / set.size + 0.5) * cs, by + bs * 0.25, by + bs * 0.75);
-    const praise = perfect ? 'TERTEMİZ!' : lines >= 4 ? 'KAHRAMAN!' : lines === 3 ? 'MUHTEŞEM!' : lines === 2 ? 'HARİKA!' : combo >= 5 && combo % 5 === 0 ? 'SÜPER!' : '';
-    const items = [];
-    if (praise) items.push([praise, 'praise']);
+    const items = [[perfect ? 'TERTEMİZ!' : pickPraise(lines, combo), 'praise']];
     if (combo >= 2) items.push(['KOMBO ×' + fmt(combo), 'combo']);
     items.push(['+' + fmt(pts), 'pts']);
     const gap = cs * 0.9, y0 = fy - ((items.length - 1) * gap) / 2;
@@ -1451,6 +1638,7 @@
   function triggerGameOver() {
     if (gameState !== 'play') return;
     gameState = 'ending';
+    clearTimeout(themeTimer);
     overT0 = performance.now() + 650;
     store.del(K_SAVE);
     clearTimeout(overTimer);
@@ -1506,6 +1694,8 @@
     if (drag) { drag = null; canvas.classList.remove('grabbing'); hideDragEl(); }
     gameState = 'play';
     greyRows = -1;
+    clearTimeout(themeTimer);
+    setTheme(0, themeIdx > 0);
     tray = generateTray();
     refreshFits();
     ovOver.hidden = true;
@@ -1554,6 +1744,8 @@
       if (score > best) setBest(score);
       gameState = 'play';
       greyRows = -1;
+      clearTimeout(themeTimer);
+      setTheme(themeFor(score), false);
       tray = t.some(Boolean) ? t : generateTray();
       startEnter(tray);
       refreshFits();
@@ -1591,9 +1783,12 @@
      iPhone notları: Safari, Web Audio seslerini telefon sessiz moddayken kısar. Ses oturumu "playback"e
      alınınca (iOS 16.4+) sessiz modda da çalar; eski sürümlerde sessiz bir <audio> döngüsü aynı işi görür.
      Ses bağlamı ancak bir dokunuş sırasında açılabildiği için her dokunuşta (touchend/click) yeniden denenir.
-     Telefon hoparlörü kalın sesleri pek vermediği için sesler 500 Hz üstünde ve sıkıştırıcıyla dolgun. */
+     Telefon hoparlörü kalın sesleri pek vermediği için sesler 500 Hz üstünde ve sıkıştırıcıyla dolgun.
+     Uzun oyunda sesler gecikmesin diye: her ses açılışta bir kez hazır ses kaydına çizilir; çalarken tek bir
+     düğüm kurulur ve ses bitince ses ağından çıkarılır (ses ağı zamanla şişmez). Bağlam bir kez çalıştıktan
+     sonra durursa sesler sıraya alınmaz, böylece sonradan topluca gelen gecikmiş sesler olmaz. */
   const Sound = {
-    ac: null, out: null, nbuf: null, resumeT: -1e9, silentEl: null,
+    ac: null, out: null, bufs: null, rendering: null, resumeT: -1e9, ran: false, silentEl: null,
     session() {
       try {
         if (navigator.audioSession && navigator.audioSession.type !== 'playback') navigator.audioSession.type = 'playback';
@@ -1607,6 +1802,8 @@
         try { this.ac = new AC(); } catch (e2) { return false; }
       }
       this.out = this.chain(this.ac);
+      this.ac.onstatechange = () => { if (this.ac.state === 'running') this.ran = true; };
+      this.prerender();
       return true;
     },
     // Ana çıkış: sıkıştırıcı, sesleri telefon hoparlöründe dolgun ve eşit yüksek tutar (patlamalarda cızırtı yapmadan)
@@ -1671,58 +1868,96 @@
       if (this.silentEl && !this.silentEl.paused) this.silentEl.pause();
       if (!soundOn && this.ac && this.ac.state === 'running') { const p = this.ac.suspend(); if (p && p.catch) p.catch(() => {}); }
     },
-    // Bağlam açıksa ya da az önce açılması istendiyse çal: ilk dokunuşun sesi de kaybolmaz
+    // Çalınabilir mi: bağlam çalışıyorsa evet. Bağlam henüz hiç çalışmadıysa (ilk dokunuş) az önce açılması
+    // istendiğinde de çal; bir kez çalıştıktan sonra durmuşsa sıraya alma (geç gelen ses olmasın)
     ok() {
       const ac = this.ac;
-      return soundOn && !!ac && (ac.state === 'running' || (ac.state !== 'closed' && performance.now() - this.resumeT < 500));
+      if (!soundOn || !ac || !this.bufs) return false;
+      if (ac.state === 'running') { this.ran = true; return true; }
+      return !this.ran && ac.state !== 'closed' && performance.now() - this.resumeT < 500;
     },
-    tone(f, dur, type, vol, delay, f2) {
-      if (!this.ok()) return;
-      const ac = this.ac, t = ac.currentTime + (delay || 0);
-      const o = ac.createOscillator(), g = ac.createGain();
-      o.type = type || 'sine';
-      o.frequency.setValueAtTime(f, t);
-      if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur);
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(vol, t + 0.008);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-      o.connect(g); g.connect(this.out);
-      o.start(t); o.stop(t + dur + 0.05);
-    },
-    noise(dur, vol, freq, delay) {
-      if (!this.ok()) return;
-      const ac = this.ac, t = ac.currentTime + (delay || 0);
-      if (!this.nbuf) {
-        const len = Math.floor(ac.sampleRate * 0.6);
-        this.nbuf = ac.createBuffer(1, len, ac.sampleRate);
-        const d = this.nbuf.getChannelData(0);
+    // Ses tarifleri: düğümleri verilen (çevrimdışı) bağlama kurar; açılışta bir kez çizilir
+    recipe(ac, name) {
+      const out = ac.destination;
+      const tone = (f, dur, type, vol, delay, f2) => {
+        const t = delay || 0, o = ac.createOscillator(), g = ac.createGain();
+        o.type = type;
+        o.frequency.setValueAtTime(f, t);
+        if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(vol, t + 0.008);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.connect(g); g.connect(out);
+        o.start(t); o.stop(t + dur + 0.05);
+      };
+      const noise = (dur, vol, freq) => {
+        const len = Math.floor(ac.sampleRate * (dur + 0.05)), nb = ac.createBuffer(1, len, ac.sampleRate), d = nb.getChannelData(0);
         for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+        const src = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain();
+        src.buffer = nb;
+        f.type = 'bandpass'; f.Q.value = 0.8;
+        f.frequency.setValueAtTime(freq, 0);
+        f.frequency.exponentialRampToValueAtTime(Math.max(300, freq * 0.3), dur);
+        g.gain.setValueAtTime(vol, 0);
+        g.gain.exponentialRampToValueAtTime(0.0001, dur);
+        src.connect(f); f.connect(g); g.connect(out);
+        src.start(0);
+      };
+      if (name === 'pick') tone(988, 0.07, 'triangle', 0.38);
+      else if (name === 'place') { tone(660, 0.1, 'triangle', 0.55, 0, 440); noise(0.05, 0.3, 3600); }
+      else if (name === 'bad') tone(392, 0.16, 'square', 0.24, 0, 262);
+      else if (name === 'over') [784, 659, 523, 392].forEach((f, i) => tone(f, 0.3, 'triangle', 0.28, i * 0.15));
+      else { // clearN: N notalı yükselen akor + parlak hışırtı
+        const n = +name.slice(5), base = 659.25;
+        [0, 4, 7, 12, 16, 19].slice(0, n).forEach((st, i) => {
+          const f = base * Math.pow(2, st / 12);
+          tone(f, 0.22, 'triangle', 0.3, i * 0.05);
+          tone(f * 2, 0.16, 'sine', 0.09, i * 0.05);
+        });
+        noise(0.3, 0.24, 5200);
       }
-      const src = ac.createBufferSource();
-      src.buffer = this.nbuf;
-      const f = ac.createBiquadFilter();
-      f.type = 'bandpass'; f.Q.value = 0.8;
-      f.frequency.setValueAtTime(freq, t);
-      f.frequency.exponentialRampToValueAtTime(Math.max(300, freq * 0.3), t + dur);
-      const g = ac.createGain();
-      g.gain.setValueAtTime(vol, t);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-      src.connect(f); f.connect(g); g.connect(this.out);
-      src.start(t); src.stop(t + dur + 0.05);
     },
-    pick() { this.tone(988, 0.07, 'triangle', 0.38); },
-    place() { this.tone(660, 0.1, 'triangle', 0.55, 0, 440); this.noise(0.05, 0.3, 3600); },
-    bad() { this.tone(392, 0.16, 'square', 0.24, 0, 262); },
-    clear(lines, cmb) {
-      const base = 659.25 * Math.pow(2, Math.min(Math.max(cmb - 1, 0), 12) / 12); // kombo arttıkça ton yükselir
-      [0, 4, 7, 12, 16, 19].slice(0, Math.min(6, 2 + lines)).forEach((st, i) => {
-        const f = base * Math.pow(2, st / 12);
-        this.tone(f, 0.22, 'triangle', 0.3, i * 0.05);
-        this.tone(f * 2, 0.16, 'sine', 0.09, i * 0.05);
+    renderOne(OAC, name, dur) {
+      const oc = new OAC(1, Math.ceil(44100 * dur), 44100);
+      this.recipe(oc, name);
+      return new Promise((resolve, reject) => {
+        let done = false;
+        const fin = b => { if (!done) { done = true; resolve(b); } };
+        oc.oncomplete = e => fin(e.renderedBuffer);
+        try { const p = oc.startRendering(); if (p && typeof p.then === 'function') p.then(fin, reject); } catch (e) { reject(e); }
       });
-      this.noise(0.3, 0.24, 5200);
     },
-    over() { [784, 659, 523, 392].forEach((f, i) => this.tone(f, 0.3, 'triangle', 0.28, i * 0.15)); }
+    prerender() {
+      if (this.rendering) return this.rendering;
+      const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+      if (!OAC) return Promise.resolve();
+      const list = [['pick', 0.14], ['place', 0.17], ['bad', 0.22], ['over', 0.85], ['clear3', 0.56], ['clear4', 0.56], ['clear5', 0.56], ['clear6', 0.56]];
+      const bufs = {};
+      this.rendering = list.reduce((pr, [name, dur]) => pr.then(() => this.renderOne(OAC, name, dur).then(b => { bufs[name] = b; })), Promise.resolve())
+        .then(() => { this.bufs = bufs; })
+        .catch(() => { this.rendering = null; });
+      return this.rendering;
+    },
+    // Hazır sesi çal: tek düğüm; bitince ağdan çıkar
+    play(name, rate) {
+      if (!this.ok()) return;
+      const b = this.bufs[name];
+      if (!b) return;
+      try {
+        const src = this.ac.createBufferSource();
+        src.buffer = b;
+        if (rate && rate !== 1) src.playbackRate.value = rate;
+        src.connect(this.out);
+        src.onended = () => { try { src.disconnect(); } catch (e) { /* zaten ayrık */ } };
+        src.start(0);
+      } catch (e) { /* ses çalınamadı */ }
+    },
+    pick() { this.play('pick'); },
+    place() { this.play('place'); },
+    bad() { this.play('bad'); },
+    // kombo arttıkça ton yükselir (en çok bir oktav)
+    clear(lines, cmb) { this.play('clear' + Math.min(6, 2 + lines), Math.pow(2, Math.min(Math.max(cmb - 1, 0), 12) / 12)); },
+    over() { this.play('over'); }
   };
 
   /* ================= Çizim ================= */
@@ -2205,25 +2440,31 @@
     window.__test = {
       info: () => ({
         mode: L.mode, cs: L.cs, bx: L.bx, by: L.by, bs: L.bs, fp: L.fp, tray: L.tray, slotW: L.slotW, hud: L.hud,
-        state: gameState, score, combo, comboMoves, best, moves, linesTotal, maxCombo, photo: PHOTOS.every((ph, k) => !!photoImgs[k]), photoIdx: PHOTO_IDX, photoOf: PHOTO_OF,
+        state: gameState, score, combo, comboMoves, best, moves, linesTotal, maxCombo, photo: PHOTOS.every((ph, k) => !!photoImgs[k]), photoIdx: PHOTO_IDX, photoOf: PHOTO_OF, theme: themeIdx, themeName: THEMES[Math.max(0, themeIdx)].name, dpr: L.dpr, fxDpr: L.fxDpr,
         board: Array.from(board), pieces: tray.map(p => p && { id: p.shape.id, w: p.w, h: p.h, color: p.color, fits: p.fits, cells: p.cells })
       }),
       setBoard: arr => { board.set(arr); pops = []; refreshFits(); cellsDirty = true; fxDirty = true; wake(); },
       setTray: ids => { tray = ids.map((id, i) => (id ? makePiece(SHAPE_BY_ID[id], i % PALETTE.length) : null)); refreshFits(); },
       check: () => { if (!tray.some(p => p && p.fits)) triggerGameOver(); },
-      setScore: n => { score = n; displayScore = n; if (score > best) setBest(score); setScoreText(score); updateHud(); },
+      setScore: n => { score = n; displayScore = n; if (score > best) setBest(score); setScoreText(score); updateHud(); queueTheme(0); },
       audio: () => ({ state: Sound.ac ? Sound.ac.state : 'none', session: navigator.audioSession ? navigator.audioSession.type : 'yok' }),
-      // Bir sesi çevrimdışı çizip tepe ve ortalama seviyesini döndürür (cızırtı / kısıklık denetimi)
+      // Hazır sesi ana çıkıştan (sıkıştırıcı dahil) çevrimdışı geçirip tepe ve ortalama seviyesini döndürür
       renderSound: async (name, a, b) => {
-        const ac = new OfflineAudioContext(1, Math.round(44100 * 1.6), 44100);
-        const saved = [Sound.ac, Sound.out, Sound.nbuf, Sound.resumeT, soundOn];
-        Sound.ac = ac; Sound.out = Sound.chain(ac); Sound.nbuf = null; Sound.resumeT = performance.now(); soundOn = true;
-        try { Sound[name](a, b); } finally { [Sound.ac, Sound.out, Sound.nbuf, Sound.resumeT, soundOn] = saved; }
+        await Sound.prerender();
+        const key = name === 'clear' ? 'clear' + Math.min(6, 2 + a) : name;
+        const rate = name === 'clear' ? Math.pow(2, Math.min(Math.max(b - 1, 0), 12) / 12) : 1;
+        const ac = new OfflineAudioContext(1, Math.round(44100 * 1.2), 44100), src = ac.createBufferSource();
+        src.buffer = Sound.bufs[key];
+        src.playbackRate.value = rate;
+        src.connect(Sound.chain(ac));
+        src.start(0);
         const d = (await ac.startRendering()).getChannelData(0);
         let peak = 0, sq = 0, n = 0;
         for (let i = 0; i < d.length; i++) { const v = Math.abs(d[i]); if (v > peak) peak = v; if (v > 0.001) { sq += v * v; n++; } }
         return { peak: +peak.toFixed(3), rms: +(n ? Math.sqrt(sq / n) : 0).toFixed(3), ms: Math.round((n / 44100) * 1000) };
       },
+      sounds: () => (Sound.bufs ? Object.keys(Sound.bufs) : []),
+      themeCount: THEMES.length,
       newGame
     };
   }
@@ -2240,6 +2481,7 @@
     booted = true;
     setSound(soundOn, false);
     layout();
+    Sound.prerender(); // sesler açılışta bir kez hazırlanır (dokunuş gerekmez)
     // Kayıtlı oyun varsa kaldığı yerden devam, yoksa yeni oyun
     const restored = (data && data.v === 2 && load(data)) || load();
     if (!restored) newGame();
