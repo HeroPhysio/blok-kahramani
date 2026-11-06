@@ -4,7 +4,7 @@
    - Sayfa: önce internet (en yeni sürüm gelsin); bağlantı yoksa ya da 3 sn içinde yanıt gelmezse kayıtlı kopya.
    - Yazı tipleri ve simgeler: önce kayıtlı kopya. */
 'use strict';
-const VERSION = '4557ae2b02';
+const VERSION = 'a4d1e81bf8';
 const CACHE = 'blok-kahramani-' + VERSION;
 const SHELL = ["./", "manifest.webmanifest", "apple-touch-icon.png", "icon-192.png", "icon-512.png", "favicon-32.png", "fonts/rajdhani-600-latin-ext.woff2", "fonts/rajdhani-600-latin.woff2", "fonts/rajdhani-700-latin-ext.woff2", "fonts/rajdhani-700-latin.woff2", "fonts/russo-one-400-latin-ext.woff2", "fonts/russo-one-400-latin.woff2"];
 const INDEX = new URL('./', self.registration.scope).href;
