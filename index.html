@@ -2290,11 +2290,20 @@
     }
   }
 
-  // Sürüklenen parça, dokunulan noktası hep parmağın altında kalacak şekilde çizilir; raftaki boyundan
-  // tahta boyuna o nokta çevresinde büyür (dokununca yukarı fırlamaz)
+  // Dokunmatikte sürüklenen parça parmağın üstüne çıkar ki parmak kapatmasın: alt kenarı parmağın LIFT_GAP
+  // kare üstünde durur. Dokununca fırlamaz; parmak ilk LIFT_RAMP kare ilerlerken yumuşakça yükselir.
+  // Farede kaldırma yok: tutulan nokta imlecin altında kalır.
+  const LIFT_GAP = 1.3, LIFT_RAMP = 1.6;
+  function liftCells(d) { // parça merkezinin parmağın ne kadar üstünde olduğu (kare biriminde)
+    if (d.type === 'mouse') return d.gv;
+    const t = clamp(d.far / (LIFT_RAMP * L.cs), 0, 1);
+    return lerp(d.gv, d.piece.h / 2 + LIFT_GAP, t * t * (3 - 2 * t));
+  }
+
+  // Sürüklenen parça raftaki boyundan tahta boyuna tutulan nokta çevresinde büyür
   function dragVisual(d, now) {
     const q = clamp((now - d.t0) / 150, 0, 1), cs = lerp(d.scs, L.cs, easeOutCubic(q));
-    return { x: d.px - d.gu * cs, y: d.py - d.gv * cs, cs };
+    return { x: d.px - d.gu * cs, y: d.py - liftCells(d) * cs, cs };
   }
 
   // Efekt katmanı: yalnızca efekt sürerken çizilir
@@ -2363,9 +2372,9 @@
 
   function updateDrag() {
     const d = drag, p = d.piece, cs = L.cs;
-    // Parçanın tahta boyundaki merkezi: tutulan nokta parmağın altında
+    // Parçanın tahta boyundaki merkezi: yatayda tutulan nokta parmağın hizasında, dikeyde parmağın üstünde
     d.tx = d.px - d.gu * cs;
-    d.ty = d.py - d.gv * cs;
+    d.ty = d.py - liftCells(d) * cs;
     d.preview = findSnap(p, d.tx, d.ty);
     const key = d.preview ? p.uid + ':' + d.preview.r + ':' + d.preview.c : '';
     if (key !== previewKey) {
@@ -2375,13 +2384,21 @@
     }
   }
 
+  // Parmak/imleç yeni konumda; kaldırma, başlangıçtan en çok ne kadar uzaklaşıldığına bağlı (geri gelince inmez)
+  function moveDrag(x, y) {
+    const d = drag;
+    d.px = x; d.py = y;
+    d.far = Math.max(d.far, Math.hypot(x - d.x0, y - d.y0));
+    updateDrag();
+  }
+
   function overBoard(x, y) {
     return x >= L.bx - L.fp && x <= L.bx + L.bs + L.fp && y >= L.by - L.fp && y <= L.by + L.bs + L.fp;
   }
 
   function endDrag(e, cancelled) {
     if (!drag || (e && e.pointerId !== drag.pid)) return;
-    if (e && !cancelled) { const pos = pointerPos(e); drag.px = pos.x; drag.py = pos.y; updateDrag(); }
+    if (e && !cancelled) { const pos = pointerPos(e); moveDrag(pos.x, pos.y); }
     const d = drag;
     drag = null;
     canvas.classList.remove('grabbing');
@@ -2414,7 +2431,7 @@
     p.ret = null; p.enter = null; p.hv = 0;
     // Parçanın neresinden tutulduğu (kare biriminde, merkeze göre; parçanın dışına taşmaz)
     const gu = clamp((x - v.x) / v.cs, -p.w / 2, p.w / 2), gv = clamp((y - v.y) / v.cs, -p.h / 2, p.h / 2);
-    drag = { piece: p, slot: i, pid: e.pointerId, type: e.pointerType || 'mouse', px: x, py: y, gu, gv, scs: v.cs, t0: now, tx: v.x, ty: v.y, preview: null };
+    drag = { piece: p, slot: i, pid: e.pointerId, type: e.pointerType || 'mouse', px: x, py: y, x0: x, y0: y, far: 0, gu, gv, scs: v.cs, t0: now, tx: v.x, ty: v.y, preview: null };
     previewKey = '';
     updateDrag();
     prepareDragEl(p);
@@ -2433,8 +2450,7 @@
     const { x, y } = pointerPos(e);
     if (drag) {
       if (e.pointerId !== drag.pid) return;
-      drag.px = x; drag.py = y;
-      updateDrag();
+      moveDrag(x, y);
       wake();
       return;
     }
@@ -2551,7 +2567,8 @@
         return { peak: +peak.toFixed(3), rms: +(n ? Math.sqrt(sq / n) : 0).toFixed(3), ms: Math.round((n / 44100) * 1000) };
       },
       sounds: () => (Sound.bufs ? Object.keys(Sound.bufs) : []),
-      grab: () => (drag ? { gu: drag.gu, gv: drag.gv } : null),
+      // Tutulan nokta ve parça merkezinin parmağa göre konumu (px; parça merkezi = parmak + ox, oy)
+      grab: () => (drag ? { gu: drag.gu, gv: drag.gv, ox: drag.tx - drag.px, oy: drag.ty - drag.py, lift: drag.type !== 'mouse', gap: LIFT_GAP, ramp: LIFT_RAMP } : null),
       soundApi: Sound,
       themeCount: THEMES.length,
       // Parça üreticisi: verilen tahta için n kez üçlü üretir; clearInfo: patlatma fırsatları
