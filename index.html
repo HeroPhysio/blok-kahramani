@@ -1841,12 +1841,14 @@
     },
     // Ana çıkış: sıkıştırıcı, sesleri telefon hoparlöründe dolgun ve eşit yüksek tutar (patlamalarda cızırtı yapmadan)
     chain(ac) {
-      const comp = ac.createDynamicsCompressor();
-      comp.threshold.value = -16; comp.knee.value = 12; comp.ratio.value = 4; comp.attack.value = 0.003; comp.release.value = 0.18;
+      const soft = ac.createBiquadFilter(), comp = ac.createDynamicsCompressor();
+      soft.type = 'lowpass'; soft.frequency.value = 4200; soft.Q.value = 0.5; // tiz sertliği alır
+      comp.threshold.value = -20; comp.knee.value = 18; comp.ratio.value = 3; comp.attack.value = 0.005; comp.release.value = 0.25;
       const out = ac.createGain(), post = ac.createGain();
       out.gain.value = 1;
-      post.gain.value = 1.65; // sıkıştırmadan sonra yükselt: telefon hoparlöründe net duyulsun
-      out.connect(comp);
+      post.gain.value = 1.2; // telefon hoparlöründe duyulur ama rahatsız etmez
+      out.connect(soft);
+      soft.connect(comp);
       comp.connect(post);
       post.connect(ac.destination);
       return out;
@@ -1913,45 +1915,33 @@
       }
       return ac.state !== 'closed' && performance.now() - this.resumeT < 500;
     },
-    // Ses tarifleri: düğümleri verilen (çevrimdışı) bağlama kurar; açılışta bir kez çizilir
+    // Ses tarifleri: düğümleri verilen (çevrimdışı) bağlama kurar; açılışta bir kez çizilir.
+    // Hepsi yumuşak sinüs tonlar: yavaşça açılır, zil ya da marimba gibi kendiliğinden söner; hışırtı ve sert dalga yok.
     recipe(ac, name) {
       const out = ac.destination;
-      const tone = (f, dur, type, vol, delay, f2) => {
-        const t = delay || 0, o = ac.createOscillator(), g = ac.createGain();
-        o.type = type;
-        o.frequency.setValueAtTime(f, t);
-        if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur);
-        g.gain.setValueAtTime(0.0001, t);
-        g.gain.exponentialRampToValueAtTime(vol, t + 0.008);
-        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-        o.connect(g); g.connect(out);
-        o.start(t); o.stop(t + dur + 0.05);
-      };
-      const noise = (dur, vol, freq) => {
-        const len = Math.floor(ac.sampleRate * (dur + 0.05)), nb = ac.createBuffer(1, len, ac.sampleRate), d = nb.getChannelData(0);
-        for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
-        const src = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain();
-        src.buffer = nb;
-        f.type = 'bandpass'; f.Q.value = 0.8;
-        f.frequency.setValueAtTime(freq, 0);
-        f.frequency.exponentialRampToValueAtTime(Math.max(300, freq * 0.3), dur);
-        g.gain.setValueAtTime(vol, 0);
-        g.gain.exponentialRampToValueAtTime(0.0001, dur);
-        src.connect(f); f.connect(g); g.connect(out);
-        src.start(0);
-      };
-      if (name === 'pick') tone(988, 0.07, 'triangle', 0.38);
-      else if (name === 'place') { tone(660, 0.1, 'triangle', 0.55, 0, 440); noise(0.05, 0.3, 3600); }
-      else if (name === 'bad') tone(392, 0.16, 'square', 0.24, 0, 262);
-      else if (name === 'over') [784, 659, 523, 392].forEach((f, i) => tone(f, 0.3, 'triangle', 0.28, i * 0.15));
-      else { // clearN: N notalı yükselen akor + parlak hışırtı
-        const n = +name.slice(5), base = 659.25;
-        [0, 4, 7, 12, 16, 19].slice(0, n).forEach((st, i) => {
-          const f = base * Math.pow(2, st / 12);
-          tone(f, 0.22, 'triangle', 0.3, i * 0.05);
-          tone(f * 2, 0.16, 'sine', 0.09, i * 0.05);
+      // harm: bir oktav üstteki hafif üst ses (tona sıcaklık katar), tonla birlikte daha çabuk söner
+      const tone = (f, dur, vol, delay, f2, harm) => {
+        const t = delay || 0;
+        [[1, vol, dur], [2, vol * (harm || 0), dur * 0.55]].forEach(([k, v, d]) => {
+          if (v <= 0) return;
+          const o = ac.createOscillator(), g = ac.createGain();
+          o.type = 'sine';
+          o.frequency.setValueAtTime(f * k, t);
+          if (f2) o.frequency.exponentialRampToValueAtTime(f2 * k, t + Math.min(d, 0.12));
+          g.gain.setValueAtTime(0.0001, t);
+          g.gain.exponentialRampToValueAtTime(v, t + 0.012);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+          o.connect(g); g.connect(out);
+          o.start(t); o.stop(t + d + 0.05);
         });
-        noise(0.3, 0.24, 5200);
+      };
+      if (name === 'pick') tone(587.33, 0.07, 0.06);                      // çok hafif "tık"
+      else if (name === 'place') tone(493.88, 0.16, 0.3, 0, 392, 0.25);  // yumuşak "tok"
+      else if (name === 'bad') tone(261.63, 0.18, 0.2, 0, 220, 0.3);      // alçak, yumuşak "pof"
+      else if (name === 'over') [659.25, 523.25, 440, 349.23].forEach((f, i) => tone(f, 0.6, 0.17, i * 0.22, 0, 0.2)); // yavaş inen notalar
+      else { // clearN: N notalı yumuşak zil arpeji (do majör pentatonik)
+        const n = +name.slice(5);
+        [523.25, 659.25, 783.99, 880, 1046.5, 1318.5].slice(0, n).forEach((f, i) => tone(f, 0.5, 0.17, i * 0.07, 0, 0.16));
       }
     },
     renderOne(OAC, name, dur) {
@@ -1968,7 +1958,7 @@
       if (this.rendering) return this.rendering;
       const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
       if (!OAC) return Promise.resolve();
-      const list = [['pick', 0.14], ['place', 0.17], ['bad', 0.22], ['over', 0.85], ['clear3', 0.56], ['clear4', 0.56], ['clear5', 0.56], ['clear6', 0.56]];
+      const list = [['pick', 0.13], ['place', 0.22], ['bad', 0.24], ['over', 1.36], ['clear3', 0.95], ['clear4', 0.95], ['clear5', 0.95], ['clear6', 0.95]];
       const bufs = {};
       this.rendering = list.reduce((pr, [name, dur]) => pr.then(() => this.renderOne(OAC, name, dur).then(b => { bufs[name] = b; })), Promise.resolve())
         .then(() => { this.bufs = bufs; })
@@ -1992,8 +1982,8 @@
     pick() { this.play('pick'); },
     place() { this.play('place'); },
     bad() { this.play('bad'); },
-    // kombo arttıkça ton yükselir (en çok bir oktav)
-    clear(lines, cmb) { this.play('clear' + Math.min(6, 2 + lines), Math.pow(2, Math.min(Math.max(cmb - 1, 0), 12) / 12)); },
+    // kombo arttıkça ton biraz yükselir (en çok 5 yarım ses): tizleşip rahatsız etmez
+    clear(lines, cmb) { this.play('clear' + Math.min(6, 2 + lines), Math.pow(2, Math.min(Math.max(cmb - 1, 0), 5) / 12)); },
     over() { this.play('over'); }
   };
 
@@ -2514,8 +2504,8 @@
       renderSound: async (name, a, b) => {
         await Sound.prerender();
         const key = name === 'clear' ? 'clear' + Math.min(6, 2 + a) : name;
-        const rate = name === 'clear' ? Math.pow(2, Math.min(Math.max(b - 1, 0), 12) / 12) : 1;
-        const ac = new OfflineAudioContext(1, Math.round(44100 * 1.2), 44100), src = ac.createBufferSource();
+        const rate = name === 'clear' ? Math.pow(2, Math.min(Math.max(b - 1, 0), 5) / 12) : 1;
+        const ac = new OfflineAudioContext(1, Math.round(44100 * 1.6), 44100), src = ac.createBufferSource();
         src.buffer = Sound.bufs[key];
         src.playbackRate.value = rate;
         src.connect(Sound.chain(ac));
@@ -2527,6 +2517,7 @@
       },
       sounds: () => (Sound.bufs ? Object.keys(Sound.bufs) : []),
       grab: () => (drag ? { gu: drag.gu, gv: drag.gv } : null),
+      soundApi: Sound,
       themeCount: THEMES.length,
       newGame
     };
