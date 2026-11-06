@@ -1319,8 +1319,10 @@
        assist1/2: 1. parçanın / diğerlerinin çizgi tamamlayan şekillerden seçilme olasılığı
        keep     : kombo sürerken, kalan hamle hakkı içinde patlatma yapılabilecek bir üçlünün aranma olasılığı
        bigLimit : üçlüde en fazla bir büyük parça kuralının uygulanma olasılığı
+       multi    : 1. parça patlatan şekillerden seçilirken, tahta hazırsa aynı anda en çok çizgiyi (2+) patlatanın seçilme olasılığı
+       perfect  : tahta hazırsa, tahtayı tamamen boşaltan bir parça verilme olasılığı
      MODE.combo : patlatma olmadan kaç hamle sonra kombonun bozulduğu */
-  const MODE = { combo: 5, ramp: 800000, curve: 0.6, guarantee: [1, 0.4], assist1: [0.8, 0.35], assist2: [0.35, 0.1], keep: [1, 0.35], bigLimit: [1, 0.3] };
+  const MODE = { combo: 5, ramp: 800000, curve: 0.6, guarantee: [1, 0.4], assist1: [0.8, 0.35], assist2: [0.35, 0.1], keep: [1, 0.35], bigLimit: [1, 0.3], multi: [0.8, 0.6], perfect: [0.9, 0.6] };
 
   function difficulty(score, mode) {
     return mode.ramp > 0 ? Math.pow(Math.min(1, Math.max(0, score / mode.ramp)), mode.curve) : 0;
@@ -1359,28 +1361,42 @@
     return nb;
   }
 
-  // Şu an en az bir satırı ya da sütunu tamamlayabilen şekiller
-  function clearingShapesOn(bd) {
+  // Patlatma fırsatları: tek yerleştirmede en az 1 çizgi tamamlayan şekiller (one), tahtada aynı anda en çok
+  // çizgiyi (2+) patlatabilen şekiller (multi; top: o çizgi sayısı) ve tahtayı tamamen boşaltan şekiller (perfect)
+  function clearInfoOn(bd) {
     const rowCnt = new Int8Array(N), colCnt = new Int8Array(N);
     for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) if (bd[r * N + c] >= 0) { rowCnt[r]++; colCnt[c]++; }
     const addR = new Int8Array(N), addC = new Int8Array(N);
-    const out = [];
+    const one = [], perfect = [], tops = [];
+    let top = 0;
     for (const s of SHAPES) {
-      let ok = false;
-      for (let r0 = 0; r0 <= N - s.h && !ok; r0++) {
-        for (let c0 = 0; c0 <= N - s.w && !ok; c0++) {
+      let best = 0, empties = false;
+      for (let r0 = 0; r0 <= N - s.h; r0++) {
+        for (let c0 = 0; c0 <= N - s.w; c0++) {
           if (!canPlaceOn(bd, s, r0, c0)) continue;
           addR.fill(0); addC.fill(0);
           for (const [r, c] of s.cells) { addR[r0 + r]++; addC[c0 + c]++; }
+          let lines = 0;
           for (let i = 0; i < N; i++) {
-            if ((addR[i] && rowCnt[i] + addR[i] === N) || (addC[i] && colCnt[i] + addC[i] === N)) { ok = true; break; }
+            if (addR[i] && rowCnt[i] + addR[i] === N) lines++;
+            if (addC[i] && colCnt[i] + addC[i] === N) lines++;
           }
+          if (!lines) continue;
+          if (lines > best) best = lines;
+          if (!empties) empties = placeAndClear(bd, s, r0, c0).every(v => v < 0);
         }
       }
-      if (ok) out.push(s);
+      if (best >= 1) one.push(s);
+      if (best >= 2) tops.push([s, best]);
+      if (best > top) top = best;
+      if (empties) perfect.push(s);
     }
-    return out;
+    const multi = top >= 2 ? tops.filter(x => x[1] === top).map(x => x[0]) : [];
+    return { one, multi, perfect, top };
   }
+
+  // Şu an en az bir satırı ya da sütunu tamamlayabilen şekiller
+  function clearingShapesOn(bd) { return clearInfoOn(bd).one; }
 
   // Üç parça bir sırayla tahtaya sığıyor mu? need > 0 ise ilk need yerleştirmeden biri çizgi de patlatmalı.
   // Derinlik öncelikli arama; iş miktarı (budget.left) sınırlı.
@@ -1429,8 +1445,9 @@
     const d = difficulty(score || 0, mode), mix = ab => ab[0] + (ab[1] - ab[0]) * d;
     const fitting = SHAPES.filter(s => fitsOn(bd, s));
     const small = fitting.filter(s => s.tier === 0);
-    const clearers = clearingShapesOn(bd);
+    const ci = clearInfoOn(bd), clearers = ci.one;
     const guarantee = Math.random() < mix(mode.guarantee);
+    const pPerfect = mix(mode.perfect), pMulti = mix(mode.multi);
     const limitBig = Math.random() < mix(mode.bigLimit);
     const a1 = mix(mode.assist1), a2 = mix(mode.assist2);
     let keep = guarantee && need > 0 && Math.random() < mix(mode.keep) ? Math.min(need, 3) : 0;
@@ -1443,7 +1460,12 @@
       picks = [];
       let big = false;
       for (let i = 0; i < 3; i++) {
-        let pool = clearers.length && Math.random() < (i === 0 ? a1 : a2) ? clearers : base;
+        let pool = base;
+        if (i === 0 && ci.perfect.length && Math.random() < pPerfect) pool = ci.perfect; // tüm tahtayı patlatma fırsatı
+        else if (clearers.length && Math.random() < (i === 0 ? a1 : a2)) {
+          // patlatan parça; tahta hazırlanmışsa çoğunlukla aynı anda en çok çizgiyi patlatan
+          pool = i === 0 && ci.multi.length && Math.random() < pMulti ? ci.multi : clearers;
+        }
         if (big && limitBig) { const rest = pool.filter(q => q.tier < 2); if (rest.length) pool = rest; }
         const s = pickWeighted(pool);
         if (s.tier === 2) big = true;
@@ -1461,6 +1483,8 @@
   function clearPoints(cells, lines, combo) {
     return 10 * cells * lines * combo;
   }
+  // Tahtayı tamamen boşaltınca (TERTEMİZ!) ek ödül
+  function perfectBonus(combo) { return 1000 * Math.max(1, combo); }
   /* === PARÇA ÜRETİCİ BİTİŞ === */
 
   // Patlatınca çıkan cesaretlendirici yazılar: büyük patlatmada daha coşkulu; aynı yazı art arda gelmez
@@ -1629,9 +1653,14 @@
     const lines = rows.length + cols.length;
     combo += 1;
     comboMoves = MODE.combo;
-    const pts = clearPoints(set.size, lines, combo);
+    let pts = clearPoints(set.size, lines, combo);
     if (combo > maxCombo) maxCombo = combo;
     linesTotal += lines;
+    let perfect = true; // patlamadan sonra tahta tamamen boş mu?
+    for (let i = 0; i < N * N; i++) if (board[i] >= 0 && !set.has(i)) { perfect = false; break; }
+    const big = perfect || lines >= 3;
+    const bonus = perfect ? perfectBonus(combo) : 0;
+    pts += bonus;
 
     // Patlama dalgası: parçanın merkezinden çizgi boyunca dışarı doğru
     const pcR = r0 + (p.h - 1) / 2, pcC = c0 + (p.w - 1) / 2;
@@ -1641,7 +1670,7 @@
       let d = 99;
       if (rows.indexOf(r) >= 0) d = Math.min(d, Math.abs(c - pcC));
       if (cols.indexOf(c) >= 0) d = Math.min(d, Math.abs(r - pcR));
-      ghosts.push({ r, c, color: p.color, t0: now + 50 + d * 30, dur: 340, burst: false, s: 1, a: 1, fl: 0 });
+      ghosts.push({ r, c, color: p.color, t0: now + 50 + d * 30, dur: 340, burst: false, s: 1, a: 1, fl: 0, n: big ? 8 : 5 });
       board[i] = -1;
       sr += r; sc += c;
     }
@@ -1652,21 +1681,24 @@
     for (const c of cols) beams.push({ type: 'col', i: c, o: oy, t0: now + 30, dur: 440, color: p.color });
     addScore(pts);
 
-    let perfect = true;
-    for (let i = 0; i < N * N; i++) if (board[i] >= 0) { perfect = false; break; }
     // Yazılar patlayan bölgeye yakın ama tahtanın ortasına doğru çekilmiş durur
     const mx = bx + bs / 2;
     const fx = mx + (bx + (sc / set.size + 0.5) * cs - mx) * 0.3;
     const fy = clamp(by + (sr / set.size + 0.5) * cs, by + bs * 0.25, by + bs * 0.75);
     const items = [[perfect ? 'TERTEMİZ!' : pickPraise(lines, combo), 'praise']];
     if (combo >= 2) items.push(['KOMBO ×' + fmt(combo), 'combo']);
+    if (bonus) items.push(['BONUS +' + fmt(bonus), 'combo']);
     items.push(['+' + fmt(pts), 'pts']);
     const gap = cs * 0.9, y0 = fy - ((items.length - 1) * gap) / 2;
     items.forEach((it, k) => spawnFloat(it[0], fx, y0 + k * gap, it[1], k * 60));
 
-    shake(Math.min(8, 1.5 + lines * 1.8));
+    shake(perfect ? 12 : Math.min(9, 1.5 + lines * 1.8));
+    // Büyük patlatmada (3+ çizgi ya da tüm tahta) ekran parlar
+    if (big && !REDUCED && typeof flashEl.animate === 'function') {
+      try { flashEl.animate([{ opacity: 0 }, { opacity: perfect ? 1 : 0.7, offset: 0.15 }, { opacity: 0 }], { duration: perfect ? 750 : 520, easing: 'ease-out' }); } catch (e) { /* desteklenmiyor */ }
+    }
     if (combo >= 2) bump(hudCombo, 1.3);
-    Sound.clear(lines, combo);
+    Sound.clear(perfect ? Math.max(lines, 4) : lines, combo);
     buzz(lines > 1 ? [18, 40, 22] : 16);
     announce(lines + ' çizgi patladı, +' + fmt(pts) + ' puan' + (combo >= 2 ? ', kombo ×' + combo : '') + '. Skor ' + fmt(score) + '.');
   }
@@ -2109,7 +2141,7 @@
       const x = bx + g.c * cs, y = by + g.r * cs;
       if (p < 0) { g.s = 1; g.a = 1; g.fl = 0.18; }
       else {
-        if (!g.burst && p >= 0.28) { g.burst = true; burst(x + cs / 2, y + cs / 2, g.color, REDUCED ? 2 : 5); }
+        if (!g.burst && p >= 0.28) { g.burst = true; burst(x + cs / 2, y + cs / 2, g.color, REDUCED ? 2 : g.n || 5); }
         if (p < 0.28) { const q = p / 0.28; g.s = 1 + 0.18 * easeOutCubic(q); g.a = 1; g.fl = 0.18 + q * 0.72; }
         else { const q = (p - 0.28) / 0.72; g.s = 1.18 * (1 - 0.8 * easeInCubic(q)); g.a = 1 - q * q; g.fl = (1 - q) * 0.9; }
       }
@@ -2170,7 +2202,7 @@
       const ang = rand(0, Math.PI * 2), sp = rand(70, 280) * k;
       particles.push({ x, y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp - 110 * k, life: 0, max: rand(0.4, 0.75), size: rand(0.07, 0.17) * L.cs, color: Math.random() < 0.25 ? '#ffffff' : col.spark });
     }
-    if (particles.length > 240) particles.splice(0, particles.length - 240);
+    if (particles.length > 360) particles.splice(0, particles.length - 360);
   }
 
   function updateParticles(dt) {
@@ -2522,6 +2554,9 @@
       grab: () => (drag ? { gu: drag.gu, gv: drag.gv } : null),
       soundApi: Sound,
       themeCount: THEMES.length,
+      // Parça üreticisi: verilen tahta için n kez üçlü üretir; clearInfo: patlatma fırsatları
+      gen: (arr, n, sc) => Array.from({ length: n }, () => chooseTrayShapes(Int8Array.from(arr), MODE, 0, sc || 0).map(q => q.id)),
+      clearInfo: arr => { const ci = clearInfoOn(Int8Array.from(arr)); return { one: ci.one.map(q => q.id), multi: ci.multi.map(q => q.id), perfect: ci.perfect.map(q => q.id), top: ci.top }; },
       newGame
     };
   }
