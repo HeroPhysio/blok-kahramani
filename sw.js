@@ -2,9 +2,10 @@
    Oyun bir kez internetle açılınca oyunun dosyaları telefona kaydedilir; sonra bağlantı ve ana ekran
    simgesi internet olmadan da çalışır.
    - Sayfa: önce internet (en yeni sürüm gelsin); bağlantı yoksa ya da 3 sn içinde yanıt gelmezse kayıtlı kopya.
-   - Yazı tipleri ve simgeler: önce kayıtlı kopya. */
+   - Yazı tipleri ve simgeler: önce kayıtlı kopya.
+   - version.json hiç kaydedilmez: açık kalan oyun yeni sürümü buradan öğrenir. */
 'use strict';
-const VERSION = '4889c9f745';
+const VERSION = '4947b7c59a';
 const CACHE = 'blok-kahramani-' + VERSION;
 const SHELL = ["./", "manifest.webmanifest", "apple-touch-icon.png", "icon-192.png", "icon-512.png", "favicon-32.png", "fonts/rajdhani-600-latin-ext.woff2", "fonts/rajdhani-600-latin.woff2", "fonts/rajdhani-700-latin-ext.woff2", "fonts/rajdhani-700-latin.woff2", "fonts/russo-one-400-latin-ext.woff2", "fonts/russo-one-400-latin.woff2"];
 const INDEX = new URL('./', self.registration.scope).href;
@@ -28,6 +29,7 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) return;
+  if (new URL(req.url).pathname.endsWith('/version.json')) return; // her zaman internetten
   if (req.mode === 'navigate') {
     // Sayfa: internetten gelen yeni sürüm kaydedilir; gelmezse kayıtlı kopya açılır
     const net = fetch(req);

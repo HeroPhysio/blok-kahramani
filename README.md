@@ -12,6 +12,9 @@ aynı hamlede 2 çizgi 2 kat, 3 çizgi 3 kat puan getirir ve hepsi kombo ile ça
 Art arda her patlatma komboyu 1 artırır; 5 hamle boyunca hiç patlatma yapılmazsa kombo sıfırlanır.
 Tahtayı birkaç çizgiyi ya da tüm tahtayı birden patlatacak şekilde hazırlarsan oyun çoğu zaman o işi bitirecek
 parçayı da verir. Tahtayı tamamen boşaltmak (TERTEMİZ!) 1.000 × kombo bonus getirir.
+Parçalar çeşitli gelir: aynı parça art arda pek gelmez, oyun ilerledikçe (puan ya da hamle) zorlaşır.
+Ses kesilirse "SES DURDU" düğmesi çıkar, dokununca ses geri gelir. Yeni sürüm yayımlanınca açık oyunda
+"YENİ SÜRÜM VAR" düğmesi çıkar; oyun kayıtlı olduğu için güncelleme kaldığın yerden sürer.
 Her 10.000 puanda tema değişir: 20 tema sırayla döner. Puan arttıkça oyun zorlaşır.
 Bütün şekiller (3x3 kare, çubuklar, L, T, S/Z, çapraz...) eşit sıklıkta gelir.
 

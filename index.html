@@ -20,6 +20,7 @@
 <meta property="og:image:height" content="630">
 <meta property="og:locale" content="tr_TR">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="bk-build" content="e1be336cbe">
 <meta name="theme-color" content="#050817">
 <meta name="author" content="Baran Yavuz, Hero Uygulama Yazılım Teknolojileri Limited Şirketi">
 <meta name="color-scheme" content="dark">
@@ -205,6 +206,32 @@
   .pips i.on { background: var(--gold); border-color: var(--gold); box-shadow: 0 0 6px rgba(255, 197, 49, .9); }
 
   /* İlk açılış ipucu */
+  /* Bildirim düğmesi: SES DURDU / YENİ SÜRÜM VAR (oyunu durdurmaz) */
+  #notice {
+    position: fixed;
+    z-index: 6;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 15px 7px;
+    border-radius: 999px;
+    border: 1.5px solid var(--accent, rgba(120, 170, 255, .9));
+    background: rgba(8, 14, 34, .9);
+    color: #fff;
+    font: 700 13px/1 'Rajdhani', system-ui, sans-serif;
+    letter-spacing: .08em;
+    white-space: nowrap;
+    cursor: pointer;
+    box-shadow: 0 0 14px rgba(90, 150, 255, .35);
+    animation: noticePulse 1.8s ease-in-out infinite;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #notice[hidden] { display: none; }
+  #notice svg { width: 16px; height: 16px; flex: none; }
+  @keyframes noticePulse { 50% { box-shadow: 0 0 24px rgba(90, 150, 255, .7); } }
   #hint {
     position: fixed;
     z-index: 3;
@@ -477,7 +504,7 @@
   @keyframes pulse { 50% { transform: scale(1.06); } }
   body.modal #twinkle i, body.modal #ring, body.modal #hint { animation-play-state: paused; }
   @media (prefers-reduced-motion: reduce) {
-    #twinkle i, #ring, #hl.pulse, #hint, .overlay, .card, .badge { animation: none; }
+    #twinkle i, #ring, #hl.pulse, #hint, #notice, .overlay, .card, .badge { animation: none; }
     #twinkle i { opacity: .5; }
     .float { animation: floatFade .95s linear both; }
   }
@@ -532,6 +559,7 @@
 <div id="hint" aria-hidden="true" hidden><b>PARÇALARI SÜRÜKLE</b><span>Satır ya da sütun doldur, patlat!</span></div>
 <div id="floats" aria-hidden="true"></div>
 <div id="flash" aria-hidden="true"></div>
+<button id="notice" type="button" hidden></button>
 
 <footer id="credits">
   <div class="cr-line"><span class="cr-beta">DENEME SÜRÜMÜ</span><span>Hero Uygulama Yazılım Teknolojileri Ltd. Şti.</span></div>
@@ -853,6 +881,8 @@
   const hint = $('hint');
   const floatsEl = $('floats');
   const themeBgEl = $('themeBg');
+  const noticeEl = $('notice');
+  let updateReady = false; // sitede yeni sürüm yayımlandı mı
   const flashEl = $('flash');
   const metaTheme = document.querySelector('meta[name="theme-color"]');
   const btnRestart = $('btnRestart');
@@ -1043,6 +1073,7 @@
     ws.borderRadius = (L.fp * 1.5 + 3) + 'px';
     hint.style.left = (L.bx + L.bs / 2) + 'px';
     hint.style.top = (L.by + L.bs / 2) + 'px';
+    placeNotice();
     scoreText = '';
     bestText = '';
     setScoreText(displayScore);
@@ -1312,8 +1343,10 @@
 
   /* ================= Oyun mantığı ================= */
   /* === PARÇA ÜRETİCİ (saf fonksiyonlar: tahtayı parametre olarak alır, simülasyonla da test edilir) ===
-     Tek mod. Başta cömert, puan arttıkça zorlaşır; böylece oyun sonsuz sürmez:
-       zorluk d = (skor / MODE.ramp) ^ MODE.curve (en çok 1); her yardım [başta, en zorda] arasında d ile azalır.
+     Tek mod. Başta cömert, puan ve hamle sayısı arttıkça zorlaşır; böylece oyun sonsuz sürmez:
+       zorluk d = en büyüğü((skor / MODE.ramp) ^ MODE.curve, (hamle / MODE.rampMoves) ^ MODE.curveMoves), en çok 1
+       (az kombo yapan oyuncu puanı yavaş toplar; hamle sayısı onda da oyunu zamanla zorlaştırır).
+       Her yardım [başta, en zorda] arasında d ile azalır.
        guarantee: yeni üçlünün o anki tahtaya bir sırayla tamamen sığacağının garanti edilme olasılığı
                   (garanti yoksa yalnızca en az bir parçanın sığması aranır)
        assist1/2: 1. parçanın / diğerlerinin çizgi tamamlayan şekillerden seçilme olasılığı
@@ -1321,12 +1354,23 @@
        bigLimit : üçlüde en fazla bir büyük parça kuralının uygulanma olasılığı
        multi    : 1. parça patlatan şekillerden seçilirken, tahta hazırsa aynı anda en çok çizgiyi (2+) patlatanın seçilme olasılığı
        perfect  : tahta hazırsa, tahtayı tamamen boşaltan bir parça verilme olasılığı
+     Çeşitlilik (hep aynı parçalar gelmesin):
+       repeat     : son iki üçlüde çıkan her aynı aile için ağırlık çarpanı (aynı üçlüde iki kat sayılır)
+       smallLimit : üçlüde en fazla bir küçük parça (tek kare, ikili, üçlü köşe) kuralının uygulanma olasılığı
+                    (tahta yarıdan fazla doluysa uygulanmaz: sıkışık tahtada küçük parçalar can simididir)
+       Yardım parçası (patlatan şekil) seçilirken büyük şekiller öne çıkar: hep küçük boşluk dolduranlar gelmez
+       (tahta yarıdan fazla doluysa öne çıkarılmaz).
      MODE.combo : patlatma olmadan kaç hamle sonra kombonun bozulduğu */
-  const MODE = { combo: 5, ramp: 800000, curve: 0.6, guarantee: [1, 0.4], assist1: [0.8, 0.35], assist2: [0.35, 0.1], keep: [1, 0.35], bigLimit: [1, 0.3], multi: [0.8, 0.6], perfect: [0.9, 0.6] };
+  const MODE = { combo: 5, ramp: 800000, curve: 0.6, rampMoves: 600, curveMoves: 0.9, guarantee: [1, 0.4], assist1: [0.8, 0.35], assist2: [0.35, 0.1], keep: [1, 0.35], bigLimit: [1, 0.3], multi: [0.8, 0.6], perfect: [0.9, 0.6], repeat: 0.45, smallLimit: 0.8 };
 
-  function difficulty(score, mode) {
-    return mode.ramp > 0 ? Math.pow(Math.min(1, Math.max(0, score / mode.ramp)), mode.curve) : 0;
+  function difficulty(score, mode, moves) {
+    const bySc = mode.ramp > 0 ? Math.pow(Math.min(1, Math.max(0, score / mode.ramp)), mode.curve) : 0;
+    const byMv = mode.rampMoves > 0 ? Math.pow(Math.min(1, Math.max(0, (moves || 0) / mode.rampMoves)), mode.curveMoves) : 0;
+    return Math.max(bySc, byMv);
   }
+
+  // Şekil ailesi: aynı şeklin yönleri bir aile (i2h ve i2v: i2; r23 ve r32: r)
+  function famOf(s) { return s.fam || (s.fam = s.id[0] === 'r' ? 'r' : s.id.slice(0, 2)); }
 
   function canPlaceOn(bd, s, r0, c0) {
     if (r0 < 0 || c0 < 0 || r0 + s.h > N || c0 + s.w > N) return false;
@@ -1432,17 +1476,25 @@
   }
 
   // Şekil seçimi: ağırlıklar SHAPE_DEFS'te (eşit aile dağılımı); tahtanın doluluğu dağılımı değiştirmez
-  function pickWeighted(pool) {
+  // Ağırlıklı seçim; wf verilirse ağırlık ondan alınır
+  function pickWeighted(pool, wf) {
     let total = 0;
-    for (const s of pool) total += s.weight;
+    for (const s of pool) total += wf ? wf(s) : s.weight;
     let x = Math.random() * total;
-    for (const s of pool) { x -= s.weight; if (x <= 0) return s; }
+    for (const s of pool) { x -= wf ? wf(s) : s.weight; if (x <= 0) return s; }
     return pool[pool.length - 1];
   }
 
-  // need: kombo sürüyorsa kombonun bozulmasına kalan hamle sayısı, yoksa 0; score: zorluk için
-  function chooseTrayShapes(bd, mode, need, score) {
-    const d = difficulty(score || 0, mode), mix = ab => ab[0] + (ab[1] - ab[0]) * d;
+  // need: kombo sürüyorsa kombonun bozulmasına kalan hamle sayısı, yoksa 0; score ve moves: zorluk için;
+  // recent: son çıkan parçaların aileleri (çeşitlilik için)
+  function chooseTrayShapes(bd, mode, need, score, moves, recent) {
+    const d = difficulty(score || 0, mode, moves || 0), mix = ab => ab[0] + (ab[1] - ab[0]) * d;
+    const seen = {}, rep = mode.repeat == null ? 1 : mode.repeat;
+    for (const f of recent || []) seen[f] = (seen[f] || 0) + 1;
+    let filled = 0;
+    for (let i = 0; i < N * N; i++) if (bd[i] >= 0) filled++;
+    const roomy = filled < (N * N) / 2; // tahta ferah mı
+    const limitSmall = roomy && Math.random() < (mode.smallLimit || 0);
     const fitting = SHAPES.filter(s => fitsOn(bd, s));
     const small = fitting.filter(s => s.tier === 0);
     const ci = clearInfoOn(bd), clearers = ci.one;
@@ -1458,17 +1510,25 @@
       // garanti varken yalnızca şu an sığan şekiller; 24 denemede olmazsa yalnızca küçükler
       const base = !guarantee ? SHAPES : attempt < 24 && fitting.length ? fitting : small.length ? small : SHAPES;
       picks = [];
-      let big = false;
+      let big = false, nSmall = 0;
+      const inTray = {};
+      // Son çıkan aileler ve bu üçlüde zaten olanlar seyrelir; yardım parçasında büyük şekiller öne çıkar
+      const wBase = q => q.weight * Math.pow(rep, (seen[famOf(q)] || 0) + 2 * (inTray[famOf(q)] || 0));
+      const wHelp = roomy ? q => wBase(q) * q.cells.length / 3 : wBase;
       for (let i = 0; i < 3; i++) {
-        let pool = base;
-        if (i === 0 && ci.perfect.length && Math.random() < pPerfect) pool = ci.perfect; // tüm tahtayı patlatma fırsatı
+        let pool = base, help = false;
+        if (i === 0 && ci.perfect.length && Math.random() < pPerfect) { pool = ci.perfect; help = true; } // tüm tahtayı patlatma fırsatı
         else if (clearers.length && Math.random() < (i === 0 ? a1 : a2)) {
           // patlatan parça; tahta hazırlanmışsa çoğunlukla aynı anda en çok çizgiyi patlatan
           pool = i === 0 && ci.multi.length && Math.random() < pMulti ? ci.multi : clearers;
+          help = true;
         }
         if (big && limitBig) { const rest = pool.filter(q => q.tier < 2); if (rest.length) pool = rest; }
-        const s = pickWeighted(pool);
+        if (nSmall && limitSmall && attempt < 24) { const rest = pool.filter(q => q.tier > 0); if (rest.length) pool = rest; }
+        const s = pickWeighted(pool, help ? wHelp : wBase);
         if (s.tier === 2) big = true;
+        if (s.tier === 0) nSmall++;
+        inTray[famOf(s)] = (inTray[famOf(s)] || 0) + 1;
         picks.push(s);
       }
       if (!guarantee) { if (picks.some(s => fitsOn(bd, s))) return picks; continue; } // en az biri sığsın
@@ -1547,9 +1607,12 @@
     animateTray(ENTER.delay + 2 * ENTER.stagger + ENTER.dur + 40);
   }
 
+  let recentFams = []; // son iki üçlüde çıkan şekil aileleri (çeşitlilik için)
   function generateTray() {
     const colors = shuffle([0, 1, 2, 3, 4]);
-    const pieces = shuffle(chooseTrayShapes(board, MODE, combo > 0 ? comboMoves : 0, score).map((s, i) => makePiece(s, colors[i])));
+    const shapes = chooseTrayShapes(board, MODE, combo > 0 ? comboMoves : 0, score, moves, recentFams);
+    recentFams = recentFams.concat(shapes.map(famOf)).slice(-6);
+    const pieces = shuffle(shapes.map((s, i) => makePiece(s, colors[i])));
     for (const p of pieces) p.fits = fitsAnywhere(p);
     startEnter(pieces);
     return pieces;
@@ -1704,6 +1767,7 @@
   }
 
   function triggerGameOver() {
+    checkUpdate();
     if (gameState !== 'play') return;
     gameState = 'ending';
     clearTimeout(themeTimer);
@@ -1764,6 +1828,7 @@
     greyRows = -1;
     clearTimeout(themeTimer);
     setTheme(0, themeIdx > 0);
+    recentFams = [];
     tray = generateTray();
     refreshFits();
     ovOver.hidden = true;
@@ -1854,9 +1919,13 @@
      Telefon hoparlörü kalın sesleri pek vermediği için sesler 500 Hz üstünde ve sıkıştırıcıyla dolgun.
      Uzun oyunda sesler gecikmesin diye: her ses açılışta bir kez hazır ses kaydına çizilir; çalarken tek bir
      düğüm kurulur ve ses bitince ses ağından çıkarılır (ses ağı zamanla şişmez). Bağlam bir kez çalıştıktan
-     sonra durursa sesler sıraya alınmaz, böylece sonradan topluca gelen gecikmiş sesler olmaz. */
+     sonra durursa sesler sıraya alınmaz, böylece sonradan topluca gelen gecikmiş sesler olmaz.
+     Uzun oyunda iPhone sesi kesebilir (bildirim, arama, ses yolu değişimi): bekçi bunu fark eder (bağlam durmuş
+     ya da zamanı ilerlemiyor), iki kez kendiliğinden açmayı dener, olmazsa "SES DURDU" düğmesi çıkar; ona
+     dokununca ses bağlamı baştan kurulur. Sürükleme sırasında sesi açmaya çalışılmaz (iPhone'da takılma yapar). */
   const Sound = {
     ac: null, out: null, bufs: null, rendering: null, resumeT: -1e9, ran: false, silentEl: null,
+    dead: false, stall: 0, lastT: -1, autoTries: 0,
     session() {
       try {
         if (navigator.audioSession && navigator.audioSession.type !== 'playback') navigator.audioSession.type = 'playback';
@@ -1913,10 +1982,24 @@
         if (p && p.catch) p.catch(() => { this.silentEl = null; });
       } catch (e) { this.silentEl = null; }
     },
-    // Dokunuş anında çağrılır: ses bağlamını açar; iOS'un sesi gerçekten açması için tek örneklik sessiz ses çalar
-    unlock() {
+    // Ses bağlamını baştan kurar: eskisi kapatılır, hazır ses kayıtları yeni bağlamda da kullanılır
+    rebuild() {
+      const old = this.ac;
+      this.ac = null; this.out = null; this.ran = false;
+      this.dead = false; this.stall = 0; this.lastT = -1; this.autoTries = 0;
+      if (old) {
+        try { old.onstatechange = null; const p = old.close(); if (p && p.catch) p.catch(() => {}); } catch (e) { /* zaten kapalı */ }
+      }
+      return this.ensure();
+    },
+    // Dokunuşta çağrılır: ses bağlamını açar; iOS'un sesi gerçekten açması için tek örneklik sessiz ses çalar.
+    // tap: gerçek bir dokunuş/tıklama (iPhone yalnızca bunda sesi açar). Ses bir kez çalıştıktan sonra yalnızca
+    // gerçek dokunuşta yeniden denenir; durmuşsa bağlam baştan kurulur.
+    unlock(tap) {
       if (!soundOn) return;
+      if (this.ran && !tap) return;
       this.session();
+      if (tap && this.ac && (this.dead || (this.ran && this.ac.state !== 'running'))) this.rebuild();
       if (!this.ensure()) return;
       const ac = this.ac;
       if (ac.state !== 'running') {
@@ -1944,11 +2027,22 @@
       const ac = this.ac;
       if (!soundOn || !ac || !this.bufs) return false;
       if (ac.state === 'running') { this.ran = true; return true; }
-      if (this.ran && ac.state !== 'closed') { // durmuş (ör. iPhone kesintisi): yeniden açmayı dene, sesi sıraya alma
-        try { const p = ac.resume(); if (p && p.catch) p.catch(() => {}); } catch (e) { /* izin yok */ }
-        return false;
-      }
+      if (this.ran) return false; // durmuş (ör. iPhone kesintisi): sesi sıraya alma; bekçi ilgilenir
       return ac.state !== 'closed' && performance.now() - this.resumeT < 500;
+    },
+    // Bekçi (1,5 sn'de bir): ses açık ve bağlam bir kez çalışmışken durmuşsa ya da zamanı ilerlemiyorsa
+    watch() {
+      const ac = this.ac;
+      if (!soundOn || !ac || !this.ran || document.hidden) { this.stall = 0; this.lastT = -1; return; }
+      const t = ac.currentTime, fine = ac.state === 'running' && t !== this.lastT;
+      this.lastT = t;
+      if (fine) { this.stall = 0; this.autoTries = 0; if (this.dead) { this.dead = false; showNotice(); } return; }
+      this.stall++;
+      if (ac.state !== 'running' && ac.state !== 'closed' && this.autoTries < 2) { // kesinti bittiyse kendiliğinden dönsün
+        this.autoTries++;
+        try { const p = ac.resume(); if (p && p.catch) p.catch(() => {}); } catch (e) { /* izin yok */ }
+      }
+      if (this.stall >= 2 && !this.dead) { this.dead = true; showNotice(); }
     },
     // Ses tarifleri: düğümleri verilen (çevrimdışı) bağlama kurar; açılışta bir kez çizilir.
     // Hepsi yumuşak sinüs tonlar: yavaşça açılır, zil ya da marimba gibi kendiliğinden söner; hışırtı ve sert dalga yok.
@@ -2092,6 +2186,7 @@
   }
 
   function positionDrag(now) {
+    if (drag.type !== 'mouse' && now - drag.t0 < LIFT_MS + 40) updateDrag(); // yükselirken hedef kare de güncellensin
     const v = dragVisual(drag, now), h = dragSize / 2, s = v.cs / L.cs;
     dragEl.style.transform = 'translate(' + (v.x - h).toFixed(2) + 'px,' + (v.y - h).toFixed(2) + 'px) scale(' + s.toFixed(3) + ')';
   }
@@ -2291,19 +2386,20 @@
   }
 
   // Dokunmatikte sürüklenen parça parmağın üstüne çıkar ki parmak kapatmasın: alt kenarı parmağın LIFT_GAP
-  // kare üstünde durur. Dokununca fırlamaz; parmak ilk LIFT_RAMP kare ilerlerken yumuşakça yükselir.
+  // kare üstünde durur. Dokununca hemen ama fırlamadan, LIFT_MS içinde yumuşakça (yavaş başlayıp yavaş biterek)
+  // yükselir; parmak hızlı kaydırılırsa ilk LIFT_RAMP karede daha da erken yükselir.
   // Farede kaldırma yok: tutulan nokta imlecin altında kalır.
-  const LIFT_GAP = 1.3, LIFT_RAMP = 1.6;
-  function liftCells(d) { // parça merkezinin parmağın ne kadar üstünde olduğu (kare biriminde)
+  const LIFT_GAP = 1.3, LIFT_RAMP = 1.6, LIFT_MS = 140;
+  function liftCells(d, now) { // parça merkezinin parmağın ne kadar üstünde olduğu (kare biriminde)
     if (d.type === 'mouse') return d.gv;
-    const t = clamp(d.far / (LIFT_RAMP * L.cs), 0, 1);
+    const t = Math.max(clamp((now - d.t0) / LIFT_MS, 0, 1), clamp(d.far / (LIFT_RAMP * L.cs), 0, 1));
     return lerp(d.gv, d.piece.h / 2 + LIFT_GAP, t * t * (3 - 2 * t));
   }
 
   // Sürüklenen parça raftaki boyundan tahta boyuna tutulan nokta çevresinde büyür
   function dragVisual(d, now) {
     const q = clamp((now - d.t0) / 150, 0, 1), cs = lerp(d.scs, L.cs, easeOutCubic(q));
-    return { x: d.px - d.gu * cs, y: d.py - liftCells(d) * cs, cs };
+    return { x: d.px - d.gu * cs, y: d.py - liftCells(d, now) * cs, cs };
   }
 
   // Efekt katmanı: yalnızca efekt sürerken çizilir
@@ -2374,7 +2470,7 @@
     const d = drag, p = d.piece, cs = L.cs;
     // Parçanın tahta boyundaki merkezi: yatayda tutulan nokta parmağın hizasında, dikeyde parmağın üstünde
     d.tx = d.px - d.gu * cs;
-    d.ty = d.py - liftCells(d) * cs;
+    d.ty = d.py - liftCells(d, performance.now()) * cs;
     d.preview = findSnap(p, d.tx, d.ty);
     const key = d.preview ? p.uid + ':' + d.preview.r + ':' + d.preview.c : '';
     if (key !== previewKey) {
@@ -2418,7 +2514,7 @@
   }
 
   canvas.addEventListener('pointerdown', e => {
-    Sound.unlock();
+    Sound.unlock(false);
     if (gameState !== 'play' || drag) return;
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     const { x, y } = pointerPos(e);
@@ -2492,13 +2588,65 @@
   }
   function startPlay(e) {
     if (e && e.target && e.target.closest && e.target.closest('a')) return; // e-posta bağlantısı
-    Sound.unlock();
+    Sound.unlock(true);
     ovStart.hidden = true;
     setModal();
+    showNotice();
   }
   ovStart.addEventListener('click', startPlay);
-  // iPhone sesi yalnızca gerçek bir dokunuşun içinde açar: her dokunuş ve tıklamada yeniden dene
-  ['touchend', 'click', 'pointerup', 'keydown'].forEach(t => document.addEventListener(t, () => Sound.unlock(), { passive: true, capture: true }));
+  // iPhone sesi yalnızca gerçek bir dokunuşun içinde açar: ilk açılışta her dokunuşta dene; sonra yalnızca
+  // tıklama ve tuşta (sürükleme sonrası dokunuş bitişi sesi açmaz, boşuna denemek oyunu takıltır)
+  ['touchend', 'pointerup'].forEach(t => document.addEventListener(t, () => Sound.unlock(false), { passive: true, capture: true }));
+  ['click', 'keydown'].forEach(t => document.addEventListener(t, () => Sound.unlock(true), { passive: true, capture: true }));
+  setInterval(() => Sound.watch(), 1500);
+
+  /* Bildirim düğmesi (oyunu durdurmaz): "SES DURDU" ya da "YENİ SÜRÜM VAR"; dokununca ses baştan kurulur ya da
+     yeni sürüm açılır (oyun kayıtlı, kaldığı yerden sürer) */
+  function showNotice() {
+    const kind = updateReady ? 'update' : soundOn && Sound.dead && ovStart.hidden ? 'sound' : '';
+    noticeEl.dataset.kind = kind;
+    noticeEl.hidden = !kind;
+    if (!kind) return;
+    noticeEl.innerHTML = kind === 'update'
+      ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0 0-4.5-4.5M12 14l4.5-4.5M5 19h14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>YENİ SÜRÜM VAR · GÜNCELLE'
+      : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z" fill="currentColor" fill-opacity=".25" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="m16 9 5 6m0-6-5 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>SES DURDU · AÇMAK İÇİN DOKUN';
+    placeNotice();
+  }
+  // Tahta ile parça rafı arasındaki boşluğa (yan yana düzende tahtanın üstüne) yerleşir
+  function placeNotice() {
+    if (noticeEl.hidden || !L.tray) return;
+    const below = L.tray.y > L.by + L.bs;
+    const y = below ? (L.by + L.bs + L.tray.y) / 2 : Math.max(24, L.by - 22);
+    noticeEl.style.left = (L.bx + L.bs / 2) + 'px';
+    noticeEl.style.top = y + 'px';
+  }
+  noticeEl.addEventListener('click', () => {
+    if (noticeEl.dataset.kind === 'update') { applyUpdate(); return; }
+    Sound.unlock(true);
+    Sound.dead = false; Sound.stall = 0;
+    showNotice();
+    setTimeout(() => Sound.pick(), 60);
+  });
+
+  /* Yeni sürüm denetimi (yalnızca sitede): uzun süre açık kalan sekme de güncel sürümü kullansın */
+  const BUILD = (document.querySelector('meta[name="bk-build"]') || {}).content || '';
+  let updCheckT = 0;
+  function checkUpdate(force) {
+    if (!BUILD || updateReady || navigator.onLine === false) return;
+    const now = Date.now();
+    if (!force && now - updCheckT < 60000) return;
+    updCheckT = now;
+    fetch('version.json?t=' + now, { cache: 'no-store' })
+      .then(r => (r.ok ? r.json() : null))
+      .then(v => { if (v && v.build && v.build !== BUILD) { updateReady = true; showNotice(); } })
+      .catch(() => {});
+  }
+  function applyUpdate() { save(); location.reload(); }
+  if (BUILD) {
+    setTimeout(checkUpdate, 4000);
+    setInterval(checkUpdate, 5 * 60000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) checkUpdate(); });
+  }
 
   /* ================= Düğmeler ================= */
   const ICON_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z" fill="currentColor" fill-opacity=".22"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
@@ -2510,8 +2658,9 @@
     btnSound.innerHTML = on ? ICON_ON : ICON_OFF;
     btnSound.setAttribute('aria-label', on ? 'Sesi kapat' : 'Sesi aç');
     btnSound.title = on ? 'Sesi kapat' : 'Sesi aç';
-    if (on && fromUser) { Sound.unlock(); Sound.pick(); }
+    if (on && fromUser) { Sound.unlock(true); Sound.pick(); }
     if (!on) Sound.pause();
+    if (typeof showNotice === 'function') showNotice();
   }
 
   btnSound.addEventListener('click', () => setSound(!soundOn, true));
@@ -2524,7 +2673,7 @@
   const closeConfirm = () => { ovConfirm.hidden = true; setModal(); };
   $('btnCancel').addEventListener('click', closeConfirm);
   $('btnConfirm').addEventListener('click', () => { ovConfirm.hidden = true; newGame(); });
-  $('btnAgain').addEventListener('click', () => newGame());
+  $('btnAgain').addEventListener('click', () => { if (updateReady) { applyUpdate(); return; } newGame(); });
   ovConfirm.addEventListener('pointerdown', e => { if (e.target === ovConfirm) closeConfirm(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !ovConfirm.hidden) closeConfirm(); });
 
@@ -2572,7 +2721,13 @@
       soundApi: Sound,
       themeCount: THEMES.length,
       // Parça üreticisi: verilen tahta için n kez üçlü üretir; clearInfo: patlatma fırsatları
-      gen: (arr, n, sc) => Array.from({ length: n }, () => chooseTrayShapes(Int8Array.from(arr), MODE, 0, sc || 0).map(q => q.id)),
+      gen: (arr, n, sc, mv) => Array.from({ length: n }, () => chooseTrayShapes(Int8Array.from(arr), MODE, 0, sc || 0, mv || 0, []).map(q => q.id)),
+      // Bildirim düğmesi ve ses bekçisi / sürüm denetimi testleri için
+      notice: () => ({ shown: !noticeEl.hidden, kind: noticeEl.dataset.kind || '', text: noticeEl.textContent }),
+      soundState: () => ({ dead: Sound.dead, stall: Sound.stall, ran: Sound.ran, state: Sound.ac ? Sound.ac.state : null }),
+      fakeStuckAudio: () => { const real = Sound.ac; Sound.ac = { state: 'running', currentTime: 12.5, resume() { return Promise.resolve(); }, close() { return Promise.resolve(); }, real }; Sound.ran = true; },
+      watch: () => Sound.watch(),
+      checkUpdate: () => checkUpdate(true),
       clearInfo: arr => { const ci = clearInfoOn(Int8Array.from(arr)); return { one: ci.one.map(q => q.id), multi: ci.multi.map(q => q.id), perfect: ci.perfect.map(q => q.id), top: ci.top }; },
       newGame
     };
