@@ -339,6 +339,16 @@
     box-shadow: 0 0 22px rgba(255, 197, 49, .7);
     animation: pulse 1.3s ease-in-out infinite;
   }
+  .badge.badge-beta {
+    padding: 6px 12px 5px;
+    color: #ffd45e;
+    background: transparent;
+    border: 1px solid rgba(255, 197, 49, .75);
+    box-shadow: 0 0 14px rgba(255, 197, 49, .25);
+    letter-spacing: .14em;
+    animation: none;
+  }
+  #ovStart { cursor: pointer; }
   .btn {
     appearance: none;
     -webkit-appearance: none;
@@ -550,6 +560,16 @@
     </div>
     <button id="btnAgain" class="btn btn-primary" type="button">TEKRAR OYNA</button>
     <p class="card-foot">Deneme sürümü · Hero Uygulama Yazılım Teknolojileri Limited Şirketi<br>Kurucu: Baran Yavuz · <a href="mailto:barannyavuuz@gmail.com">barannyavuuz@gmail.com</a></p>
+  </div>
+</div>
+
+<div id="ovStart" class="overlay" role="dialog" aria-modal="true" aria-labelledby="stTitle" hidden>
+  <div id="stCard" class="card" tabindex="-1">
+    <div class="badge badge-beta">DENEME SÜRÜMÜ</div>
+    <h2 id="stTitle" class="title">BLOK KAHRAMANI</h2>
+    <p id="stSub" class="sub">Parçaları sürükle, satır ve sütunları patlat!</p>
+    <button id="btnStart" class="btn btn-primary" type="button">OYNA</button>
+    <p class="card-foot">Hero Uygulama Yazılım Teknolojileri Limited Şirketi<br>Kurucu: Baran Yavuz · <a href="mailto:barannyavuuz@gmail.com">barannyavuuz@gmail.com</a></p>
   </div>
 </div>
 
@@ -837,6 +857,7 @@
   const btnSound = $('btnSound');
   const ovOver = $('ovOver');
   const ovConfirm = $('ovConfirm');
+  const ovStart = $('ovStart');
   const probe = $('insetProbe');
   const credits = $('credits');
   const live = $('live');
@@ -1279,7 +1300,7 @@
   }
 
   function updateHint() { hint.hidden = !(moves === 0 && gameState === 'play' && !drag); }
-  function setModal() { document.body.classList.toggle('modal', !ovOver.hidden || !ovConfirm.hidden); }
+  function setModal() { document.body.classList.toggle('modal', !ovOver.hidden || !ovConfirm.hidden || !ovStart.hidden); }
 
   // Uzun sayılar kutusuna sığsın diye yazı boyunu küçültür
   function fitText(el, text, maxPx, width) {
@@ -1886,7 +1907,11 @@
       const ac = this.ac;
       if (!soundOn || !ac || !this.bufs) return false;
       if (ac.state === 'running') { this.ran = true; return true; }
-      return !this.ran && ac.state !== 'closed' && performance.now() - this.resumeT < 500;
+      if (this.ran && ac.state !== 'closed') { // durmuş (ör. iPhone kesintisi): yeniden açmayı dene, sesi sıraya alma
+        try { const p = ac.resume(); if (p && p.catch) p.catch(() => {}); } catch (e) { /* izin yok */ }
+        return false;
+      }
+      return ac.state !== 'closed' && performance.now() - this.resumeT < 500;
     },
     // Ses tarifleri: düğümleri verilen (çevrimdışı) bağlama kurar; açılışta bir kez çizilir
     recipe(ac, name) {
@@ -2240,9 +2265,11 @@
     }
   }
 
+  // Sürüklenen parça, dokunulan noktası hep parmağın altında kalacak şekilde çizilir; raftaki boyundan
+  // tahta boyuna o nokta çevresinde büyür (dokununca yukarı fırlamaz)
   function dragVisual(d, now) {
-    const q = clamp((now - d.t0) / 150, 0, 1), e = easeOutCubic(q);
-    return { x: lerp(d.sx, d.tx, e), y: lerp(d.sy, d.ty, e), cs: lerp(d.scs, L.cs, e) };
+    const q = clamp((now - d.t0) / 150, 0, 1), cs = lerp(d.scs, L.cs, easeOutCubic(q));
+    return { x: d.px - d.gu * cs, y: d.py - d.gv * cs, cs };
   }
 
   // Efekt katmanı: yalnızca efekt sürerken çizilir
@@ -2311,10 +2338,9 @@
 
   function updateDrag() {
     const d = drag, p = d.piece, cs = L.cs;
-    // Dokunmatikte parça parmağın üstünde durur ki görünsün
-    const lift = d.type === 'mouse' ? 0 : (p.h * cs) / 2 + cs * 0.9;
-    d.tx = d.px;
-    d.ty = d.py - lift;
+    // Parçanın tahta boyundaki merkezi: tutulan nokta parmağın altında
+    d.tx = d.px - d.gu * cs;
+    d.ty = d.py - d.gv * cs;
     d.preview = findSnap(p, d.tx, d.ty);
     const key = d.preview ? p.uid + ':' + d.preview.r + ':' + d.preview.c : '';
     if (key !== previewKey) {
@@ -2361,7 +2387,9 @@
     const p = tray[i], now = performance.now();
     const v = p.ret ? retVisual(p, i, now) : trayVisual(p, i, now);
     p.ret = null; p.enter = null; p.hv = 0;
-    drag = { piece: p, slot: i, pid: e.pointerId, type: e.pointerType || 'mouse', px: x, py: y, sx: v.x, sy: v.y, scs: v.cs, t0: now, tx: v.x, ty: v.y, preview: null };
+    // Parçanın neresinden tutulduğu (kare biriminde, merkeze göre; parçanın dışına taşmaz)
+    const gu = clamp((x - v.x) / v.cs, -p.w / 2, p.w / 2), gv = clamp((y - v.y) / v.cs, -p.h / 2, p.h / 2);
+    drag = { piece: p, slot: i, pid: e.pointerId, type: e.pointerType || 'mouse', px: x, py: y, gu, gv, scs: v.cs, t0: now, tx: v.x, ty: v.y, preview: null };
     previewKey = '';
     updateDrag();
     prepareDragEl(p);
@@ -2403,8 +2431,31 @@
   document.addEventListener('gesturestart', e => e.preventDefault());
   window.addEventListener('blur', () => { if (drag) endDrag(null, true); });
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) { if (drag) endDrag(null, true); Sound.pause(); }
+    if (document.hidden) { if (drag) endDrag(null, true); Sound.pause(); return; }
+    // Geri dönünce ses durmuşsa (iPhone'da sık olur) tek dokunuşla devam ekranı
+    setTimeout(() => {
+      if (!document.hidden && gameState === 'play' && soundOn && Sound.ac && Sound.ac.state !== 'running') showStart(true);
+    }, 600);
   });
+
+  /* Başlangıç / devam ekranı: iPhone ve diğer tarayıcılar sesi yalnızca parmağı kaydırmadan yapılan bir dokunuşla
+     açar; parça sürüklemek sayılmaz. Bu yüzden ses açıkken oyun tek dokunuşla başlar, ses ilk andan çalar. */
+  function showStart(resume) {
+    if (!soundOn || !ovOver.hidden || !ovConfirm.hidden) return;
+    const cont = resume || moves > 0;
+    $('btnStart').textContent = cont ? 'DEVAM ET' : 'OYNA';
+    $('stSub').textContent = cont ? 'Kaldığın yerden devam et.' : 'Parçaları sürükle, satır ve sütunları patlat!';
+    ovStart.hidden = false;
+    setModal();
+    focusDialog('btnStart', 'stCard');
+  }
+  function startPlay(e) {
+    if (e && e.target && e.target.closest && e.target.closest('a')) return; // e-posta bağlantısı
+    Sound.unlock();
+    ovStart.hidden = true;
+    setModal();
+  }
+  ovStart.addEventListener('click', startPlay);
   // iPhone sesi yalnızca gerçek bir dokunuşun içinde açar: her dokunuş ve tıklamada yeniden dene
   ['touchend', 'click', 'pointerup', 'keydown'].forEach(t => document.addEventListener(t, () => Sound.unlock(), { passive: true, capture: true }));
 
@@ -2475,6 +2526,7 @@
         return { peak: +peak.toFixed(3), rms: +(n ? Math.sqrt(sq / n) : 0).toFixed(3), ms: Math.round((n / 44100) * 1000) };
       },
       sounds: () => (Sound.bufs ? Object.keys(Sound.bufs) : []),
+      grab: () => (drag ? { gu: drag.gu, gv: drag.gv } : null),
       themeCount: THEMES.length,
       newGame
     };
@@ -2496,6 +2548,7 @@
     // Kayıtlı oyun varsa kaldığı yerden devam, yoksa yeni oyun
     const restored = (data && data.v === 2 && load(data)) || load();
     if (!restored) newGame();
+    showStart(false);
     wake();
   }
   if (hot && typeof hot.ready === 'function') {
