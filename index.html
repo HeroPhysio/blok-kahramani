@@ -539,22 +539,10 @@
   const GREY  = { rgb: '120,135,170', light: '#6c7795', base: '#3b4566', dark: '#1a2137', face1: '#4a5577', face2: '#323b5a', rim: 'rgba(150,166,205,.35)', spark: '#8090b0', noGlow: true, gloss: 0.14 };
   const WHITE = { rgb: '220,240,255', light: '#ffffff', base: '#ffffff', dark: '#dcefff', face1: '#ffffff', face2: '#eaf6ff', rim: '#ffffff', spark: '#ffffff' };
 
-  // Fotoğraflı bloklar: bu parçaların her karesinde renk yerine fotoğraf (altın çerçeveli)
-  //   1. fotoğraf: Z ve S, yatay ve dik halleriyle (s4a-d); 2. fotoğraf: iki yönlü çapraz üçlü (d3a, d3b)
-  const PHOTO_COL = { rgb: '255,197,49', light: '#fff4bd', base: '#ffc531', dark: '#a86504', face1: '#ffda70', face2: '#f2a414', rim: 'rgba(255,246,206,.98)', spark: '#ffe38f' };
-  const PHOTOS = [
-    { shapes: ['s4a', 's4b', 's4c', 's4d'], src: '' },
-    { shapes: ['d3a', 'd3b'], src: '' }
-  ];
-  const PHOTO_IDX = PALETTE.length;               // ilk fotoğraflı karenin tahtadaki değeri (5, 6, ...)
-  const PHOTO_OF = {};                            // parça kimliği → fotoğraflı karenin değeri
-  PHOTOS.forEach((ph, k) => ph.shapes.forEach(id => { PHOTO_OF[id] = PHOTO_IDX + k; }));
-  let COLORS = PALETTE.concat(PHOTOS.map(() => PHOTO_COL)); // renk numarasından renge: parıltı, ışın, kıvılcım
-  const isPhoto = v => v >= PHOTO_IDX;
 
   /* ================= Temalar =================
-     Her 20.000 puanda bir sonraki temaya geçilir (10 tema, sonra başa döner). Tema; arka planı, tahta çerçevesini,
-     boş kareleri, yıldızları, raf panelini ve blok renklerini değiştirir. Fotoğraflı bloklar hep altın çerçeveli. */
+     Her 20.000 puanda bir sonraki temaya geçilir (20 tema, sonra başa döner). Tema; arka planı, tahta çerçevesini,
+     boş kareleri, yıldızları, raf panelini ve blok renklerini değiştirir. */
   const THEME_STEP = 20000;
   const hexRgb = h => { const n = parseInt(h.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; };
   const rgbHex = (r, g, b) => '#' + [r, g, b].map(v => Math.round(Math.min(255, Math.max(0, v))).toString(16).padStart(2, '0')).join('');
@@ -631,7 +619,57 @@
       bg: { base: '#020806', top: '#03120c', bottom: '#010403', glowTop: '57,255,20', glowBottom: '255,43,214', glowL: '0,229,255', glowR: '57,255,20' },
       halo: '57,255,20', fill: '#051a13', panel: ['#06231a', '#03110c'], frame: ['57,255,20', '0,229,255', '255,43,214'],
       cell: [['#072a1f', '#041a13'], ['#062519', '#03160f']], cellLine: '57,255,120', bracket: '#39ff14',
-      stars: ['#8dffb0', '#9ff9ff'], tray: ['8,50,35', '3,22,15'], trayLine: '57,255,120' }
+      stars: ['#8dffb0', '#9ff9ff'], tray: ['8,50,35', '3,22,15'], trayLine: '57,255,120' },
+    { name: 'SAKURA', blocks: ['#ff8fb8', '#ffd6e5', '#8fd694', '#b565d9', '#ffb38a'],
+      bg: { base: '#1a0b14', top: '#2a1020', bottom: '#0d050a', glowTop: '255,143,184', glowBottom: '255,214,229', glowL: '143,214,148', glowR: '181,101,217' },
+      halo: '255,143,184', fill: '#2b1222', panel: ['#3d1830', '#1e0b17'], frame: ['255,200,220', '255,143,184', '143,214,148'],
+      cell: [['#3e1a32', '#2a1122'], ['#38172d', '#250f1e']], cellLine: '255,180,210', bracket: '#ffd6e5',
+      stars: ['#ffd6e5', '#ffffff'], tray: ['75,25,55', '34,10,25'], trayLine: '255,160,200' },
+    { name: 'ÇÖL', blocks: ['#e07a3f', '#f2c14e', '#2ec4b6', '#7fb069', '#c9564b'],
+      bg: { base: '#170e06', top: '#26170a', bottom: '#0b0603', glowTop: '242,193,78', glowBottom: '224,122,63', glowL: '46,196,182', glowR: '201,86,75' },
+      halo: '242,170,80', fill: '#2a1a0c', panel: ['#3a2410', '#1d1208'], frame: ['255,225,160', '224,122,63', '46,196,182'],
+      cell: [['#3c2612', '#2a1a0c'], ['#36220f', '#26170a']], cellLine: '255,200,140', bracket: '#f2c14e',
+      stars: ['#ffe2b0', '#9ff0e8'], tray: ['70,45,20', '30,18,8'], trayLine: '255,190,120' },
+    { name: 'KUZEY IŞIKLARI', blocks: ['#3dffa2', '#28d7ff', '#9b6bff', '#ff6bd5', '#c5ff6b'],
+      bg: { base: '#020c14', top: '#04182a', bottom: '#01060b', glowTop: '61,255,162', glowBottom: '155,107,255', glowL: '40,215,255', glowR: '255,107,213' },
+      halo: '61,255,162', fill: '#05192a', panel: ['#0a2a3e', '#04141f'], frame: ['61,255,162', '40,215,255', '155,107,255'],
+      cell: [['#0b2c40', '#071e2d'], ['#0a2739', '#061a28']], cellLine: '120,255,200', bracket: '#3dffa2',
+      stars: ['#c9fff0', '#e0d0ff'], tray: ['10,55,75', '4,24,34'], trayLine: '100,255,190' },
+    { name: 'MERCAN', blocks: ['#ff6f61', '#40e0d0', '#ffe066', '#ff5cad', '#9be15d'],
+      bg: { base: '#04101f', top: '#071a33', bottom: '#020812', glowTop: '64,224,208', glowBottom: '255,111,97', glowL: '255,92,173', glowR: '155,225,93' },
+      halo: '64,200,220', fill: '#0a1f3a', panel: ['#0f2a4d', '#071528'], frame: ['255,160,150', '64,224,208', '255,224,102'],
+      cell: [['#102d52', '#0a1f3a'], ['#0e2849', '#081b33']], cellLine: '140,220,240', bracket: '#ff6f61',
+      stars: ['#a8fff4', '#ffc2bb'], tray: ['15,45,80', '6,20,38'], trayLine: '120,210,235' },
+    { name: 'RETRO ATARİ', blocks: ['#ff3b3b', '#3b82ff', '#ffe53b', '#3bff6e', '#ff9f3b'],
+      bg: { base: '#050505', top: '#0d0d12', bottom: '#000000', glowTop: '255,59,59', glowBottom: '59,130,255', glowL: '255,229,59', glowR: '59,255,110' },
+      halo: '200,200,255', fill: '#111118', panel: ['#1a1a24', '#0b0b10'], frame: ['255,59,59', '255,229,59', '59,130,255'],
+      cell: [['#1c1c28', '#12121a'], ['#181822', '#0f0f16']], cellLine: '200,200,255', bracket: '#ffe53b',
+      stars: ['#ffffff', '#ffe53b'], tray: ['30,30,45', '12,12,18'], trayLine: '200,200,255' },
+    { name: 'GÖKKUŞAĞI', blocks: ['#ff4d6d', '#ffb703', '#3ddc97', '#4cc9f0', '#9d4edd'],
+      bg: { base: '#0b0b1a', top: '#14142b', bottom: '#05050d', glowTop: '255,77,109', glowBottom: '76,201,240', glowL: '255,183,3', glowR: '157,78,221' },
+      halo: '180,120,255', fill: '#16163a', panel: ['#1f1f4a', '#0f0f26'], frame: ['255,77,109', '61,220,151', '157,78,221'],
+      cell: [['#22224d', '#16163a'], ['#1e1e45', '#131332']], cellLine: '200,180,255', bracket: '#ffb703',
+      stars: ['#ffd1dc', '#c7f9ff'], tray: ['40,40,90', '16,16,40'], trayLine: '190,170,255' },
+    { name: 'KAHVE', blocks: ['#d4a373', '#f5e6c8', '#e07a5f', '#81b29a', '#f2cc8f'],
+      bg: { base: '#140d08', top: '#21160d', bottom: '#0a0604', glowTop: '212,163,115', glowBottom: '224,122,95', glowL: '129,178,154', glowR: '242,204,143' },
+      halo: '212,163,115', fill: '#2a1c12', panel: ['#3a2819', '#1d140c'], frame: ['245,230,200', '212,163,115', '224,122,95'],
+      cell: [['#3b291a', '#2a1c12'], ['#352417', '#251910']], cellLine: '235,200,160', bracket: '#f2cc8f',
+      stars: ['#f5e6c8', '#ffd59e'], tray: ['70,48,30', '30,20,12'], trayLine: '230,190,140' },
+    { name: 'TROPİK', blocks: ['#ffb400', '#00d68f', '#ff5e8a', '#00b4ff', '#d4ff3b'],
+      bg: { base: '#03141a', top: '#05222b', bottom: '#020a0d', glowTop: '0,214,143', glowBottom: '255,180,0', glowL: '255,94,138', glowR: '0,180,255' },
+      halo: '0,214,160', fill: '#07262e', panel: ['#0b3540', '#051a20'], frame: ['212,255,59', '0,214,143', '255,94,138'],
+      cell: [['#0d3842', '#08282f'], ['#0b323b', '#07232a']], cellLine: '120,255,210', bracket: '#ffb400',
+      stars: ['#c8fff0', '#ffe39a'], tray: ['12,58,68', '5,26,30'], trayLine: '110,240,200' },
+    { name: 'NEON ŞEHİR', blocks: ['#ff6a00', '#00f0ff', '#ff1f8f', '#b6ff00', '#fff1b0'],
+      bg: { base: '#08080c', top: '#111119', bottom: '#030305', glowTop: '255,31,143', glowBottom: '0,240,255', glowL: '255,106,0', glowR: '182,255,0' },
+      halo: '255,31,143', fill: '#14141d', panel: ['#1d1d29', '#0e0e15'], frame: ['255,31,143', '0,240,255', '255,106,0'],
+      cell: [['#1f1f2c', '#15151e'], ['#1b1b27', '#12121a']], cellLine: '255,120,200', bracket: '#00f0ff',
+      stars: ['#ffd0ea', '#b8fbff'], tray: ['35,35,50', '14,14,20'], trayLine: '255,110,190' },
+    { name: 'GÜMÜŞ', blocks: ['#c0c8d8', '#ffffff', '#6c8ebf', '#e6c27a', '#b07d9a'],
+      bg: { base: '#0c0d10', top: '#16181d', bottom: '#050607', glowTop: '200,210,230', glowBottom: '230,194,122', glowL: '108,142,191', glowR: '176,125,154' },
+      halo: '200,210,230', fill: '#1a1c22', panel: ['#262931', '#121318'], frame: ['255,255,255', '160,170,190', '230,194,122'],
+      cell: [['#272a33', '#1b1d24'], ['#23262e', '#181a20']], cellLine: '210,215,230', bracket: '#e6c27a',
+      stars: ['#ffffff', '#f3e3bd'], tray: ['45,48,58', '18,19,24'], trayLine: '200,205,220' }
   ];
   // İlk tema oyunun özgün, elle ayarlanmış renklerini kullanır; diğerleri ana renklerden türetilir
   const PALETTE0 = PALETTE.slice();
@@ -794,8 +832,6 @@
   const TRG = { x: 0, y: 0, w: 0, h: 0 };          // raf bölgesi
   const FP = 0.026, HUD_K = 0.255, G1 = 0.045, G2 = 0.055, TRAY_K = 0.4, PANEL_K = 0.95, GX = 0.06, MAX_B = 600;
   let sprites = [], greySprite = null, whiteSprite = null, spritePad = 0, dragSize = 0;
-  const photoImgs = [];
-  let greyPhotos = [];
 
   function readInsets() {
     const s = getComputedStyle(probe);
@@ -843,7 +879,7 @@
   let layoutKey = '';
   function layout() {
     const W = Math.max(1, window.innerWidth), H = Math.max(1, window.innerHeight);
-    // Tam cihaz çözünürlüğü (iPhone'larda 3x): bloklar, fotoğraflar ve yazılar keskin
+    // Tam cihaz çözünürlüğü (iPhone'larda 3x): bloklar ve yazılar keskin
     const dpr = Math.min(window.devicePixelRatio || 1, 3);
     const ins = readInsets();
     const key = [W, H, dpr, ins.t, ins.r, ins.b, ins.l].join('|');
@@ -986,56 +1022,6 @@
     return { cv, size };
   }
 
-  // Fotoğraflı blok: neon parıltı, altın çerçeve, yuvarlak köşeli fotoğraf ve cam parlaması.
-  // grey: sığmayan parçada ve oyun sonunda kullanılan soluk, gri tonlu hali
-  function makePhotoSprite(photoImg, grey) {
-    const cs = L.cs, dpr = L.dpr, pad = spritePad, size = cs + pad * 2, col = PHOTO_COL;
-    const cv = document.createElement('canvas');
-    cv.width = cv.height = Math.ceil(size * dpr);
-    const g = cv.getContext('2d');
-    g.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const gap = Math.max(1, cs * 0.05);
-    const x = pad + gap, y = pad + gap, s = cs - gap * 2, r = s * 0.2;
-    if (!grey) { // neon parıltı
-      g.save();
-      g.shadowColor = 'rgba(' + col.rgb + ',0.95)';
-      g.shadowBlur = cs * 0.38 * dpr;
-      g.fillStyle = col.base;
-      rr(g, x, y, s, s, r); g.fill();
-      g.restore();
-    }
-    let gr = g.createLinearGradient(x, y, x + s, y + s);
-    gr.addColorStop(0, col.light); gr.addColorStop(0.5, col.base); gr.addColorStop(1, col.dark);
-    g.fillStyle = gr; rr(g, x, y, s, s, r); g.fill();
-    const b = s * 0.09, fx = x + b, fy = y + b, fs = s - 2 * b, fr = r * 0.7;
-    g.save();
-    rr(g, fx, fy, fs, fs, fr); g.clip();
-    g.imageSmoothingEnabled = true;
-    g.imageSmoothingQuality = 'high';
-    g.drawImage(photoImg, fx, fy, fs, fs);
-    gr = g.createLinearGradient(0, fy, 0, fy + fs * 0.5);
-    gr.addColorStop(0, 'rgba(255,255,255,0.28)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
-    g.fillStyle = gr; g.fillRect(fx, fy, fs, fs * 0.5);
-    g.restore();
-    g.lineWidth = Math.max(1, cs * 0.02); g.strokeStyle = 'rgba(110,55,0,0.6)';
-    rr(g, fx, fy, fs, fs, fr); g.stroke();
-    const lw = Math.max(1, cs * 0.03);
-    g.lineWidth = lw; g.strokeStyle = col.rim;
-    rr(g, x + lw / 2, y + lw / 2, s - lw, s - lw, r); g.stroke();
-    if (grey) { // gri tonlu ve koyu: diğer sığmayan parçalarla aynı soluk görünüm
-      try {
-        g.setTransform(1, 0, 0, 1, 0, 0);
-        const im = g.getImageData(0, 0, cv.width, cv.height), d = im.data;
-        for (let k = 0; k < d.length; k += 4) {
-          const l = d[k] * 0.3 + d[k + 1] * 0.59 + d[k + 2] * 0.11;
-          d[k] = l * 0.42 + 22; d[k + 1] = l * 0.44 + 26; d[k + 2] = l * 0.5 + 44;
-        }
-        g.putImageData(im, 0, 0);
-      } catch (e) { freeCanvas(cv); return null; }
-    }
-    return { cv, size };
-  }
-
   // iPhone eski tuvallerin belleğini geç bırakıyor; yenilerini kurmadan önce boşalt
   function freeCanvas(cv) { if (cv) { cv.width = 0; cv.height = 0; } }
 
@@ -1043,30 +1029,10 @@
     sprites.forEach(s => freeCanvas(s.cv));
     if (greySprite) freeCanvas(greySprite.cv);
     if (whiteSprite) freeCanvas(whiteSprite.cv);
-    greyPhotos.forEach(g => g && freeCanvas(g.cv));
-    // fotoğraflı bloklar renklerden sonra (5, 6, ...); fotoğraf yüklenene kadar altın blok
-    sprites = PALETTE.map(makeSprite).concat(PHOTOS.map((ph, k) => (photoImgs[k] ? makePhotoSprite(photoImgs[k], false) : makeSprite(PHOTO_COL))));
+    sprites = PALETTE.map(makeSprite);
     greySprite = makeSprite(GREY);
-    greyPhotos = PHOTOS.map((ph, k) => (photoImgs[k] ? makePhotoSprite(photoImgs[k], true) : null));
     whiteSprite = makeSprite(WHITE);
   }
-
-  // Sığmayan parçada / oyun sonunda karenin soluk hali (fotoğraflı kare fotoğrafını korur)
-  function greyOf(v) { return (isPhoto(v) && greyPhotos[v - PHOTO_IDX]) || greySprite; }
-
-  // Fotoğraflar kodun içinde (internetsiz de çalışır); her biri çözülünce bloklar yeniden çizilir
-  PHOTOS.forEach((ph, k) => {
-    const img = new Image();
-    img.onload = () => {
-      photoImgs[k] = img;
-      if (!sprites.length) return; // yerleşim henüz kurulmadı: ilk kurulumda kullanılır
-      buildSprites();
-      if (drag) prepareDragEl(drag.piece);
-      cellsDirty = true; trayDirty = true; fxDirty = true; previewKey = ''; previewDirty = true;
-      wake();
-    };
-    img.src = ph.src;
-  });
 
   // Sabit arka katman: yıldızlar, tahta çerçevesi, boş hücreler, altın köşeler, raf paneli
   function drawBg() {
@@ -1474,7 +1440,6 @@
   }
 
   function makePiece(shape, color) {
-    if (PHOTO_OF[shape.id] !== undefined) color = PHOTO_OF[shape.id];
     return { uid: ++pieceUid, shape, cells: shape.cells, w: shape.w, h: shape.h, color, fits: true, enter: null, ret: null, hv: 0 };
   }
 
@@ -1550,7 +1515,6 @@
     themeIdx = k;
     const T = THEMES[k], anim = animated && !REDUCED;
     for (let i = 0; i < PALETTE.length; i++) PALETTE[i] = T.palette[i];
-    COLORS = PALETTE.concat(PHOTOS.map(() => PHOTO_COL));
     const layer = document.createElement('div');
     layer.className = 'tb';
     layer.style.background = themeCss(T);
@@ -1604,8 +1568,7 @@
       let d = 99;
       if (rows.indexOf(r) >= 0) d = Math.min(d, Math.abs(c - pcC));
       if (cols.indexOf(c) >= 0) d = Math.min(d, Math.abs(r - pcR));
-      const own = isPhoto(p.color) || isPhoto(board[i]);
-      ghosts.push({ r, c, color: own ? board[i] : p.color, t0: now + 50 + d * 30, dur: 340, burst: false, s: 1, a: 1, fl: 0 });
+      ghosts.push({ r, c, color: p.color, t0: now + 50 + d * 30, dur: 340, burst: false, s: 1, a: 1, fl: 0 });
       board[i] = -1;
       sr += r; sc += c;
     }
@@ -1731,7 +1694,7 @@
       const bd = new Int8Array(N * N);
       for (let i = 0; i < N * N; i++) {
         const v = s.board[i];
-        bd[i] = Number.isInteger(v) && v >= 0 && v < COLORS.length ? v : -1;
+        bd[i] = Number.isInteger(v) && v >= 0 ? v % PALETTE.length : -1; // eski sürümdeki fotoğraflı kareler renkli bloğa döner
       }
       const t = s.tray.map(x => (Array.isArray(x) && SHAPE_BY_ID[x[0]] ? makePiece(SHAPE_BY_ID[x[0]], clamp(x[1] | 0, 0, PALETTE.length - 1)) : null));
       if (t.some(Boolean) && !t.some(p => p && fitsOn(bd, p))) return false; // kayıtlı oyun zaten bitmiş
@@ -1985,7 +1948,7 @@
       for (let c = 0; c < N; c++) {
         const v = board[r * N + c];
         if (v < 0) continue;
-        drawCell(cctx, r < gr ? greyOf(v) : sprites[v], bx + c * cs, by + r * cs, cs, 1, 1);
+        drawCell(cctx, r < gr ? greySprite : sprites[v], bx + c * cs, by + r * cs, cs, 1, 1);
       }
     }
   }
@@ -1999,7 +1962,7 @@
     cvHl.classList.toggle('pulse', willClear);
     if (!pv) return;
     const { r: r0, c: c0, rows, cols } = pv;
-    const p = drag.piece, spr = sprites[p.color], col = COLORS[p.color];
+    const p = drag.piece, spr = sprites[p.color], col = PALETTE[p.color];
     const { bx, by, cs, bs } = L;
     if (willClear) {
       hctx.fillStyle = 'rgba(' + col.rgb + ',0.2)';
@@ -2012,8 +1975,7 @@
       const mark = (r, c) => { const i = r * N + c; if (!seen.has(i) && board[i] >= 0) { seen.add(i); marked.push(i); } };
       for (const r of rows) for (let c = 0; c < N; c++) mark(r, c);
       for (const c of cols) for (let r = 0; r < N; r++) mark(r, c);
-      // fotoğraflı parçada kareler kendi renginde kalır; fotoğraflı kare hiçbir parçada boyanmaz
-      for (const i of marked) drawCell(hctx, isPhoto(p.color) || isPhoto(board[i]) ? sprites[board[i]] : spr, bx + (i % N) * cs, by + ((i / N) | 0) * cs, cs, 1, 1);
+      for (const i of marked) drawCell(hctx, spr, bx + (i % N) * cs, by + ((i / N) | 0) * cs, cs, 1, 1);
       hctx.globalCompositeOperation = 'lighter';
       for (const i of marked) drawCell(hctx, whiteSprite, bx + (i % N) * cs, by + ((i / N) | 0) * cs, cs, 0.2, 1);
       hctx.globalCompositeOperation = 'source-over';
@@ -2116,7 +2078,7 @@
       const a = p < 0.15 ? p / 0.15 : 1 - (p - 0.15) / 0.85;
       const grow = easeOutCubic(Math.min(1, p * 2.4));
       const th = cs * (0.5 + 0.9 * p);
-      const rgb = COLORS[b.color].rgb;
+      const rgb = PALETTE[b.color].rgb;
       ctx.globalAlpha = clamp(a, 0, 1) * 0.9;
       if (b.type === 'row') {
         const cy = by + (b.i + 0.5) * cs;
@@ -2136,7 +2098,7 @@
   }
 
   function burst(x, y, colorIdx, n) {
-    const col = COLORS[colorIdx], k = L.cs / 44;
+    const col = PALETTE[colorIdx], k = L.cs / 44;
     for (let i = 0; i < n; i++) {
       const ang = rand(0, Math.PI * 2), sp = rand(70, 280) * k;
       particles.push({ x, y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp - 110 * k, life: 0, max: rand(0.4, 0.75), size: rand(0.07, 0.17) * L.cs, color: Math.random() < 0.25 ? '#ffffff' : col.spark });
@@ -2213,7 +2175,7 @@
       p.hv = (p.hv || 0) + (target - (p.hv || 0)) * Math.min(1, frameDt * 14);
       const v = trayVisual(p, i, now);
       if (v.a <= 0) continue;
-      drawPiece(tctx, p, v.x, v.y, v.cs, v.a, p.fits ? sprites[p.color] : greyOf(p.color));
+      drawPiece(tctx, p, v.x, v.y, v.cs, v.a, p.fits ? sprites[p.color] : greySprite);
     }
   }
 
@@ -2225,7 +2187,7 @@
       if (!p || !p.ret) continue;
       const v = retVisual(p, i, now);
       if (v.done) { p.ret = null; trayDirty = true; continue; }
-      drawPiece(ctx, p, v.x, v.y, v.cs, 1, p.fits ? sprites[p.color] : greyOf(p.color));
+      drawPiece(ctx, p, v.x, v.y, v.cs, 1, p.fits ? sprites[p.color] : greySprite);
     }
   }
 
@@ -2440,7 +2402,7 @@
     window.__test = {
       info: () => ({
         mode: L.mode, cs: L.cs, bx: L.bx, by: L.by, bs: L.bs, fp: L.fp, tray: L.tray, slotW: L.slotW, hud: L.hud,
-        state: gameState, score, combo, comboMoves, best, moves, linesTotal, maxCombo, photo: PHOTOS.every((ph, k) => !!photoImgs[k]), photoIdx: PHOTO_IDX, photoOf: PHOTO_OF, theme: themeIdx, themeName: THEMES[Math.max(0, themeIdx)].name, dpr: L.dpr, fxDpr: L.fxDpr,
+        state: gameState, score, combo, comboMoves, best, moves, linesTotal, maxCombo, theme: themeIdx, themeName: THEMES[Math.max(0, themeIdx)].name, dpr: L.dpr, fxDpr: L.fxDpr,
         board: Array.from(board), pieces: tray.map(p => p && { id: p.shape.id, w: p.w, h: p.h, color: p.color, fits: p.fits, cells: p.cells })
       }),
       setBoard: arr => { board.set(arr); pops = []; refreshFits(); cellsDirty = true; fxDirty = true; wake(); },

@@ -5,7 +5,7 @@ Neon temalı 8x8 blok bulmaca oyunu. Parçaları sürükle, dolan satır ve süt
 Puanlama: yerleştirilen her kare 1 puan, patlayan her kare 10 puan;
 aynı hamlede 2 çizgi 2 kat, 3 çizgi 3 kat puan getirir ve hepsi kombo ile çarpılır.
 Art arda her patlatma komboyu 1 artırır; 5 hamle boyunca hiç patlatma yapılmazsa kombo sıfırlanır.
-Her 20.000 puanda tema değişir: 10 tema sırayla döner.
+Her 20.000 puanda tema değişir: 20 tema sırayla döner.
 
 **Oyna:** https://herophysio.github.io/blok-kahramani/
 
