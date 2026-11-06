@@ -1,4 +1,4 @@
-# Blok Kahramanı
+# Hero Block
 
 > **Deneme sürümü**
 
