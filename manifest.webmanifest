@@ -1,6 +1,6 @@
 {
-  "name": "Blok Kahramanı",
-  "short_name": "Blok Kahramanı",
+  "name": "Hero Block",
+  "short_name": "Hero Block",
   "description": "Neon temalı 8x8 blok bulmaca oyunu",
   "lang": "tr",
   "start_url": "./",

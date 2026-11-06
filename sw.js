@@ -1,10 +1,10 @@
-/* Blok Kahramanı: çevrimdışı oynama için hizmet çalışanı (service worker).
+/* Hero Block: çevrimdışı oynama için hizmet çalışanı (service worker).
    Oyun bir kez internetle açılınca oyunun dosyaları telefona kaydedilir; sonra bağlantı ve ana ekran
    simgesi internet olmadan da çalışır.
    - Sayfa: önce internet (en yeni sürüm gelsin); bağlantı yoksa ya da 3 sn içinde yanıt gelmezse kayıtlı kopya.
    - Yazı tipleri ve simgeler: önce kayıtlı kopya. */
 'use strict';
-const VERSION = '8e01def997';
+const VERSION = '804cd712ca';
 const CACHE = 'blok-kahramani-' + VERSION;
 const SHELL = ["./", "manifest.webmanifest", "apple-touch-icon.png", "icon-192.png", "icon-512.png", "favicon-32.png", "fonts/rajdhani-600-latin-ext.woff2", "fonts/rajdhani-600-latin.woff2", "fonts/rajdhani-700-latin-ext.woff2", "fonts/rajdhani-700-latin.woff2", "fonts/russo-one-400-latin-ext.woff2", "fonts/russo-one-400-latin.woff2"];
 const INDEX = new URL('./', self.registration.scope).href;
