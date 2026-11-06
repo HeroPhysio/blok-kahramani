@@ -1,5 +1,10 @@
 # Blok Kahramanı
 
+> **Deneme sürümü**
+
+**Hero Uygulama Yazılım Teknolojileri Limited Şirketi** uygulamasıdır.
+Kurucu: Baran Yavuz · İletişim: [barannyavuuz@gmail.com](mailto:barannyavuuz@gmail.com)
+
 Neon temalı 8x8 blok bulmaca oyunu. Parçaları sürükle, dolan satır ve sütunları patlat, komboyu sürdür.
 
 Puanlama: yerleştirilen her kare 1 puan, patlayan her kare 10 puan;
