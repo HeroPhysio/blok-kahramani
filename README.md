@@ -22,6 +22,9 @@ Bütün şekiller (3x3 kare, çubuklar, L, T, S/Z, çapraz...) eşit sıklıkta 
 
 **Oyna:** https://herophysio.github.io/blok-kahramani/
 
+**Gizlilik:** Hesap, reklam, izleme ve çerez yok; oyun bilgileri yalnızca cihazda saklanır.
+Ayrıntılar: [Gizlilik Politikası ve KVKK Aydınlatma Metni](https://herophysio.github.io/blok-kahramani/gizlilik.html)
+
 İnternet olmadan da oynanır: oyunu bir kez internetle açınca dosyaları cihaza kaydedilir (`sw.js`).
 iPhone'da Safari'de açıp Paylaş → Ana Ekrana Ekle ile uygulama gibi tam ekran oynayabilirsin.
 Oyunun tamamı tek dosya: `index.html` (HTML, CSS ve JavaScript). Yazı tipleri `fonts/` klasöründe
