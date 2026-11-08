@@ -20,7 +20,7 @@
 <meta property="og:image:height" content="630">
 <meta property="og:locale" content="tr_TR">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="bk-build" content="e1be336cbe">
+<meta name="bk-build" content="114cd72098">
 <meta name="theme-color" content="#050817">
 <meta name="author" content="Baran Yavuz, Hero Uygulama Yazılım Teknolojileri Limited Şirketi">
 <meta name="color-scheme" content="dark">
@@ -266,6 +266,7 @@
   .float-praise { font-size: calc(var(--cs) * .95); color: #ffd040; text-shadow: 0 .06em 0 #8a4200, 0 0 .07em rgba(4, 8, 26, .95), 0 0 .3em rgba(255, 170, 30, .95), 0 0 .8em rgba(255, 130, 20, .5); }
   .float-combo { font-size: calc(var(--cs) * .72); color: #63eeff; text-shadow: 0 .06em 0 #0b3a80, 0 0 .07em rgba(4, 8, 26, .95), 0 0 .3em rgba(43, 227, 255, .95), 0 0 .8em rgba(43, 140, 255, .5); }
   .float-theme { font-size: calc(var(--cs) * .5); letter-spacing: .05em; color: #ffffff; text-shadow: 0 0 .07em rgba(4, 8, 26, .95), 0 0 .35em var(--accent, rgba(255, 197, 49, .9)), 0 0 .9em var(--accent, rgba(255, 197, 49, .5)); }
+  .float-count { font-size: calc(var(--cs) * 2.4); color: #ffffff; text-shadow: 0 .05em 0 #0d2c6e, 0 0 .06em rgba(4, 8, 26, .95), 0 0 .3em var(--accent, rgba(80, 190, 255, .95)), 0 0 .8em rgba(43, 140, 255, .5); }
   .float-pts { font-size: calc(var(--cs) * .62); color: #ffffff; text-shadow: 0 .06em 0 #0d2c6e, 0 0 .07em rgba(4, 8, 26, .95), 0 0 .3em rgba(80, 190, 255, .95); }
 
   .icon-btn {
@@ -399,6 +400,86 @@
   .btn-ghost { color: var(--text); background: rgba(20, 34, 86, .85); box-shadow: inset 0 0 0 1px var(--line); }
   .btn-ghost:hover { filter: brightness(1.15); }
   .btn-row { display: flex; gap: 10px; }
+  .btn-gap { margin-top: 10px; }
+  .btn-ico { display: flex; align-items: center; justify-content: center; gap: 10px; }
+  .btn-ico svg { width: 22px; height: 22px; flex: none; margin-top: -2px; }
+
+  /* İki kişilik düello */
+  .field { display: flex; flex-direction: column; gap: 7px; margin: 0 0 12px; text-align: left; }
+  .field > label, .field > .flabel { font: 700 12px/1 var(--ui); letter-spacing: .16em; color: #7fb6ff; }
+  .field input {
+    width: 100%;
+    min-width: 0;
+    padding: 12px 14px 11px;
+    border-radius: 14px;
+    border: 1px solid rgba(92, 160, 255, .35);
+    background: rgba(6, 12, 38, .85);
+    color: #fff;
+    font: 700 18px/1.1 var(--ui);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .field input::placeholder { color: rgba(142, 166, 216, .5); }
+  .field input:focus { border-color: rgba(255, 197, 49, .85); box-shadow: 0 0 0 3px rgba(255, 197, 49, .18); }
+  .seg { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+  .seg button {
+    appearance: none;
+    -webkit-appearance: none;
+    padding: 12px 0 11px;
+    border-radius: 12px;
+    border: 1px solid rgba(92, 160, 255, .3);
+    background: rgba(12, 22, 62, .78);
+    color: var(--muted);
+    font: 700 15px/1 var(--ui);
+    letter-spacing: .06em;
+    cursor: pointer;
+  }
+  .seg button[aria-checked="true"] { color: #241500; background: linear-gradient(180deg, #ffe892, #ffb51f); border-color: transparent; box-shadow: 0 0 16px rgba(255, 197, 49, .45); }
+  .seg button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .duel-note { margin: 2px 0 16px; font: 600 13px/1.35 var(--ui); color: rgba(142, 166, 216, .95); }
+  .duel-target { display: inline-flex; align-items: baseline; justify-content: center; gap: 10px; margin: -4px 0 18px; padding: 10px 16px 9px; border-radius: 14px; background: rgba(12, 22, 62, .78); border: 1px solid rgba(255, 197, 49, .35); }
+  .duel-target span { font: 700 12px/1 var(--ui); letter-spacing: .2em; color: var(--muted); }
+  .duel-target b { font: 400 26px/1 var(--display); color: var(--gold); text-shadow: 0 0 12px rgba(255, 190, 40, .4); }
+  .duel-target i { font: 700 13px/1 var(--ui); font-style: normal; letter-spacing: .06em; color: var(--text); }
+  .link-btn { appearance: none; -webkit-appearance: none; margin-top: 12px; padding: 8px 12px; border: 0; background: none; color: #7fb6ff; font: 700 14px/1 var(--ui); letter-spacing: .08em; cursor: pointer; }
+  .duel-res { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 2px 0 12px; }
+  .pl { min-width: 0; padding: 12px 6px 11px; border-radius: 16px; background: rgba(12, 22, 62, .78); border: 1px solid rgba(92, 160, 255, .2); }
+  .pl.win { border-color: rgba(255, 197, 49, .85); box-shadow: 0 0 18px rgba(255, 197, 49, .3), inset 0 0 18px rgba(255, 197, 49, .08); }
+  .pl-name { display: flex; align-items: center; justify-content: center; gap: 5px; font: 700 14px/1.15 var(--ui); letter-spacing: .06em; color: var(--text); white-space: nowrap; overflow: hidden; }
+  .pl-name svg { width: 17px; height: 14px; flex: none; fill: var(--gold); filter: drop-shadow(0 0 .2em rgba(255, 197, 49, .85)); }
+  .pl-score { display: block; margin: 7px 0 5px; font: 400 clamp(20px, 6.6vw, 27px)/1.05 var(--display); color: #fff; font-variant-numeric: tabular-nums; }
+  .pl.win .pl-score { color: var(--gold); text-shadow: 0 0 12px rgba(255, 190, 40, .45); }
+  .pl-stat { display: block; font: 600 12px/1.25 var(--ui); color: var(--muted); }
+  .series { margin: 0 0 16px; font: 700 13px/1.35 var(--ui); letter-spacing: .1em; color: #9fe9ff; }
+  /* Düello çubuğu: tahta ile raf arasında; sıradakini ya da ikinci oyuncuya hedefi gösterir */
+  #duelBar {
+    position: fixed;
+    z-index: 5;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 15px 6px;
+    border-radius: 999px;
+    background: rgba(8, 14, 34, .88);
+    border: 1px solid rgba(92, 160, 255, .45);
+    color: #a9c3f0;
+    font: 700 13px/1 var(--ui);
+    letter-spacing: .1em;
+    white-space: nowrap;
+    pointer-events: none;
+    transition: border-color .3s ease, box-shadow .3s ease, color .3s ease;
+  }
+  #duelBar[hidden] { display: none; }
+  #duelBar b { color: var(--gold); letter-spacing: .06em; }
+  #duelBar.ahead { border-color: rgba(80, 230, 140, .85); color: #b9ffd5; box-shadow: 0 0 16px rgba(80, 230, 140, .35); }
+  #duelBar.ahead b { color: #6dffa8; }
+  .hud-best.urgent #hudBest { color: #ff6b7a; text-shadow: 0 0 .4em rgba(255, 80, 100, .85); animation: pulse .9s ease-in-out infinite; }
   @media (max-height: 560px) {
     .card { padding: 16px 18px; }
   }
@@ -504,7 +585,7 @@
   @keyframes pulse { 50% { transform: scale(1.06); } }
   body.modal #twinkle i, body.modal #ring, body.modal #hint { animation-play-state: paused; }
   @media (prefers-reduced-motion: reduce) {
-    #twinkle i, #ring, #hl.pulse, #hint, #notice, .overlay, .card, .badge { animation: none; }
+    #twinkle i, #ring, #hl.pulse, #hint, #notice, .overlay, .card, .badge, .hud-best.urgent #hudBest { animation: none; }
     #twinkle i { opacity: .5; }
     .float { animation: floatFade .95s linear both; }
   }
@@ -570,6 +651,8 @@
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1"/><path d="M3.5 4v5h5"/></svg>
 </button>
 <button id="btnSound" class="icon-btn" type="button" aria-label="Sesi kapat" title="Sesi kapat"></button>
+<button id="btnDuel" class="icon-btn" type="button" aria-label="İki kişilik oyna" title="İki kişilik oyna"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 19.5c.6-3.4 3-5.3 6-5.3s5.4 1.9 6 5.3"/><circle cx="17" cy="9" r="2.6"/><path d="M16.6 14.3c2.4.1 4 1.7 4.6 4.6"/></svg></button>
+<div id="duelBar" aria-hidden="true" hidden></div>
 
 <div id="insetProbe" aria-hidden="true"></div>
 <div id="live" class="sr-only" aria-live="polite"></div>
@@ -587,6 +670,7 @@
       <div class="stat"><span>EN İYİ KOMBO</span><b id="goCombo">×0</b></div>
     </div>
     <button id="btnAgain" class="btn btn-primary" type="button">TEKRAR OYNA</button>
+    <button id="btnDuelOver" class="btn btn-ghost btn-gap btn-ico" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 19.5c.6-3.4 3-5.3 6-5.3s5.4 1.9 6 5.3"/><circle cx="17" cy="9" r="2.6"/><path d="M16.6 14.3c2.4.1 4 1.7 4.6 4.6"/></svg>İKİ KİŞİLİK OYNA</button>
     <p class="card-foot">Deneme sürümü · Hero Uygulama Yazılım Teknolojileri Limited Şirketi<br>Kurucu: Baran Yavuz · <a href="mailto:barannyavuuz@gmail.com">barannyavuuz@gmail.com</a></p>
   </div>
 </div>
@@ -597,6 +681,7 @@
     <h2 id="stTitle" class="title">HERO BLOCK</h2>
     <p id="stSub" class="sub">Parçaları sürükle, satır ve sütunları patlat!</p>
     <button id="btnStart" class="btn btn-primary" type="button">OYNA</button>
+    <button id="btnDuelStart" class="btn btn-ghost btn-gap btn-ico" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 19.5c.6-3.4 3-5.3 6-5.3s5.4 1.9 6 5.3"/><circle cx="17" cy="9" r="2.6"/><path d="M16.6 14.3c2.4.1 4 1.7 4.6 4.6"/></svg>İKİ KİŞİLİK</button>
     <p class="card-foot">Hero Uygulama Yazılım Teknolojileri Limited Şirketi<br>Kurucu: Baran Yavuz · <a href="mailto:barannyavuuz@gmail.com">barannyavuuz@gmail.com</a></p>
   </div>
 </div>
@@ -604,10 +689,50 @@
 <div id="ovConfirm" class="overlay" role="dialog" aria-modal="true" aria-labelledby="cfTitle" hidden>
   <div id="cfCard" class="card" tabindex="-1">
     <h2 id="cfTitle" class="title small">YENİDEN BAŞLA?</h2>
-    <p class="sub">Bu oyundaki skorun kaybolacak.</p>
+    <p id="cfSub" class="sub">Bu oyundaki skorun kaybolacak.</p>
     <div class="btn-row">
       <button id="btnCancel" class="btn btn-ghost" type="button">VAZGEÇ</button>
       <button id="btnConfirm" class="btn btn-primary" type="button">BAŞLA</button>
+    </div>
+  </div>
+</div>
+
+<div id="ovDuel" class="overlay" role="dialog" aria-modal="true" aria-labelledby="dTitle" hidden>
+  <div id="dCard" class="card" tabindex="-1">
+    <div id="dSetup">
+      <div class="badge badge-beta">İKİ KİŞİLİK</div>
+      <h2 id="dTitle" class="title small">DÜELLO</h2>
+      <p class="sub">Sırayla oynayın. Süre bitince en yüksek puanı yapan kazanır.</p>
+      <div class="field"><label for="dName1">1. OYUNCU</label><input id="dName1" type="text" maxlength="12" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" enterkeyhint="next" placeholder="ADIN"></div>
+      <div class="field"><label for="dName2">2. OYUNCU</label><input id="dName2" type="text" maxlength="12" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" enterkeyhint="done" placeholder="ADIN"></div>
+      <div class="field"><span class="flabel" id="dSecsLbl">SÜRE</span>
+        <div id="dSecs" class="seg" role="radiogroup" aria-labelledby="dSecsLbl">
+          <button type="button" role="radio" aria-checked="false" data-secs="60">1 DK</button>
+          <button type="button" role="radio" aria-checked="true" data-secs="120">2 DK</button>
+          <button type="button" role="radio" aria-checked="false" data-secs="180">3 DK</button>
+          <button type="button" role="radio" aria-checked="false" data-secs="300">5 DK</button>
+        </div>
+      </div>
+      <p class="duel-note">İkiniz de aynı parçalarla başlarsınız.</p>
+      <button id="dGo" class="btn btn-primary" type="button">BAŞLA</button>
+      <button id="dCancel" class="link-btn" type="button">VAZGEÇ</button>
+    </div>
+    <div id="dReady" hidden>
+      <div id="dRound" class="badge badge-beta">1. TUR</div>
+      <h2 id="dWho" class="title">SIRA: 1. OYUNCU</h2>
+      <p id="dInfo" class="sub"></p>
+      <div id="dTarget" class="duel-target" hidden><span>HEDEF</span><b id="dTargetVal">0</b><i id="dTargetWho"></i></div>
+      <button id="dStart" class="btn btn-primary" type="button">BAŞLA</button>
+      <button id="dQuit" class="link-btn" type="button">DÜELLODAN ÇIK</button>
+    </div>
+    <div id="dResult" hidden>
+      <div id="dResBadge" class="badge">KAZANAN</div>
+      <h2 id="dResTitle" class="title">KAZANDI!</h2>
+      <p id="dResSub" class="sub"></p>
+      <div id="dRes" class="duel-res"></div>
+      <div id="dSeries" class="series"></div>
+      <button id="dAgain" class="btn btn-primary" type="button">RÖVANŞ</button>
+      <button id="dExit" class="btn btn-ghost btn-gap" type="button">TEK KİŞİLİK OYUNA DÖN</button>
     </div>
   </div>
 </div>
@@ -831,8 +956,9 @@
   const easeOutBack = t => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); };
   const NF = new Intl.NumberFormat('tr-TR');
   const fmt = n => NF.format(Math.round(n));
+  // Raftaki sıra ve renkler de üreticinin kaynağından (düelloda iki oyuncuya aynı)
   const shuffle = a => {
-    for (let i = a.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; const t = a[i]; a[i] = a[j]; a[j] = t; }
+    for (let i = a.length - 1; i > 0; i--) { const j = (RNG() * (i + 1)) | 0; const t = a[i]; a[i] = a[j]; a[j] = t; }
     return a;
   };
 
@@ -890,6 +1016,11 @@
   const ovOver = $('ovOver');
   const ovConfirm = $('ovConfirm');
   const ovStart = $('ovStart');
+  const ovDuel = $('ovDuel');
+  const duelBar = $('duelBar');
+  const btnDuel = $('btnDuel');
+  const hudBestLabel = hudBestBox.querySelector('.hud-label');
+  const hudTitleText = document.querySelector('.hud-title span');
   const probe = $('insetProbe');
   const credits = $('credits');
   const live = $('live');
@@ -909,7 +1040,8 @@
   let best = Math.max(0, Number(store.get(K_BEST, 0)) || 0);
   let bestAtStart = best;
   let combo = 0, comboMoves = 0, maxCombo = 0, linesTotal = 0, moves = 0;
-  let gameState = 'play';                          // play | ending | over
+  let gameState = 'play';                          // play | ending | over | wait (düelloda geri sayım/duraklama)
+  let duel = null;                                 // iki kişilik düello sürüyorsa durumu
   let overT0 = 0, overTimer = 0, overSoundTimer = 0;
   let drag = null, hoverSlot = -1;
   let pops = [], ghosts = [], beams = [], particles = [];
@@ -1065,6 +1197,8 @@
     const bsz = Math.round(clamp(L.bs * 0.105, 36, 50));
     placeBtn(btnRestart, h.x, R.a - bsz / 2, bsz);
     placeBtn(btnSound, h.x + h.w - bsz, R.a - bsz / 2, bsz);
+    placeBtn(btnDuel, h.x + bsz + Math.round(bsz * 0.22), R.a - bsz / 2, bsz);
+    placeDuelBar();
     const o = L.fp + Math.max(3, L.cs * 0.08), sz = L.bs + o * 2, ws = ringWrap.style;
     ws.left = (L.bx - o) + 'px';
     ws.top = (L.by - o) + 'px';
@@ -1266,9 +1400,14 @@
     if (avail > 0 && w > avail) hudScoreBox.style.fontSize = Math.max(10, Math.floor((base * avail) / w)) + 'px';
   }
 
+  let titleText = 'HERO BLOCK';
   function updateHud() {
     let sidesChanged = false;
-    const bt = fmt(best);
+    const bt = duel ? fmtClock(duel.left) : fmt(best);
+    const tt = duel ? duel.names[duel.order[duel.turn]] : 'HERO BLOCK';
+    if (tt !== titleText) { titleText = tt; hudTitleText.textContent = tt; }
+    hudBestBox.classList.toggle('urgent', !!duel && duel.phase === 'play' && duel.left <= 10000);
+    updateDuelBar();
     if (bt !== bestText) {
       sidesChanged = bt.length !== bestText.length;
       bestText = bt;
@@ -1332,8 +1471,8 @@
     try { stage.animate(kf, { duration: 280, easing: 'linear' }); } catch (e) { /* desteklenmiyor */ }
   }
 
-  function updateHint() { hint.hidden = !(moves === 0 && gameState === 'play' && !drag); }
-  function setModal() { document.body.classList.toggle('modal', !ovOver.hidden || !ovConfirm.hidden || !ovStart.hidden); }
+  function updateHint() { hint.hidden = !(moves === 0 && gameState === 'play' && !drag && !duel); }
+  function setModal() { document.body.classList.toggle('modal', !ovOver.hidden || !ovConfirm.hidden || !ovStart.hidden || !ovDuel.hidden); }
 
   // Uzun sayılar kutusuna sığsın diye yazı boyunu küçültür
   function fitText(el, text, maxPx, width) {
@@ -1367,6 +1506,18 @@
     const bySc = mode.ramp > 0 ? Math.pow(Math.min(1, Math.max(0, score / mode.ramp)), mode.curve) : 0;
     const byMv = mode.rampMoves > 0 ? Math.pow(Math.min(1, Math.max(0, (moves || 0) / mode.rampMoves)), mode.curveMoves) : 0;
     return Math.max(bySc, byMv);
+  }
+
+  // Parça üreticisinin rastgele sayı kaynağı. Düelloda iki oyuncu aynı tohumla, yani aynı parçalarla başlar.
+  let RNG = Math.random;
+  function seededRng(seed) { // mulberry32
+    let a = seed >>> 0;
+    return () => {
+      a = (a + 0x6D2B79F5) >>> 0;
+      let t = Math.imul(a ^ (a >>> 15), a | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
   }
 
   // Şekil ailesi: aynı şeklin yönleri bir aile (i2h ve i2v: i2; r23 ve r32: r)
@@ -1480,7 +1631,7 @@
   function pickWeighted(pool, wf) {
     let total = 0;
     for (const s of pool) total += wf ? wf(s) : s.weight;
-    let x = Math.random() * total;
+    let x = RNG() * total;
     for (const s of pool) { x -= wf ? wf(s) : s.weight; if (x <= 0) return s; }
     return pool[pool.length - 1];
   }
@@ -1494,15 +1645,15 @@
     let filled = 0;
     for (let i = 0; i < N * N; i++) if (bd[i] >= 0) filled++;
     const roomy = filled < (N * N) / 2; // tahta ferah mı
-    const limitSmall = roomy && Math.random() < (mode.smallLimit || 0);
+    const limitSmall = roomy && RNG() < (mode.smallLimit || 0);
     const fitting = SHAPES.filter(s => fitsOn(bd, s));
     const small = fitting.filter(s => s.tier === 0);
     const ci = clearInfoOn(bd), clearers = ci.one;
-    const guarantee = Math.random() < mix(mode.guarantee);
+    const guarantee = RNG() < mix(mode.guarantee);
     const pPerfect = mix(mode.perfect), pMulti = mix(mode.multi);
-    const limitBig = Math.random() < mix(mode.bigLimit);
+    const limitBig = RNG() < mix(mode.bigLimit);
     const a1 = mix(mode.assist1), a2 = mix(mode.assist2);
-    let keep = guarantee && need > 0 && Math.random() < mix(mode.keep) ? Math.min(need, 3) : 0;
+    let keep = guarantee && need > 0 && RNG() < mix(mode.keep) ? Math.min(need, 3) : 0;
     if (keep === 1 && !clearers.length) keep = 0; // tek hamlede patlatabilecek şekil yok
     const kb = { left: 30000 }, budget = { left: 60000 };
     let picks = null;
@@ -1517,10 +1668,10 @@
       const wHelp = roomy ? q => wBase(q) * q.cells.length / 3 : wBase;
       for (let i = 0; i < 3; i++) {
         let pool = base, help = false;
-        if (i === 0 && ci.perfect.length && Math.random() < pPerfect) { pool = ci.perfect; help = true; } // tüm tahtayı patlatma fırsatı
-        else if (clearers.length && Math.random() < (i === 0 ? a1 : a2)) {
+        if (i === 0 && ci.perfect.length && RNG() < pPerfect) { pool = ci.perfect; help = true; } // tüm tahtayı patlatma fırsatı
+        else if (clearers.length && RNG() < (i === 0 ? a1 : a2)) {
           // patlatan parça; tahta hazırlanmışsa çoğunlukla aynı anda en çok çizgiyi patlatan
-          pool = i === 0 && ci.multi.length && Math.random() < pMulti ? ci.multi : clearers;
+          pool = i === 0 && ci.multi.length && RNG() < pMulti ? ci.multi : clearers;
           help = true;
         }
         if (big && limitBig) { const rest = pool.filter(q => q.tier < 2); if (rest.length) pool = rest; }
@@ -1626,7 +1777,7 @@
   function addScore(n) {
     if (n <= 0) return;
     score += n;
-    if (score > best) setBest(score);
+    if (!duel && score > best) setBest(score); // düello puanı rekoru etkilemez
     bump(hudScore, n >= 50 ? 1.16 : 1.08);
     wake();
   }
@@ -1767,6 +1918,7 @@
   }
 
   function triggerGameOver() {
+    if (duel) { endDuelTurn('stuck'); return; }
     checkUpdate();
     if (gameState !== 'play') return;
     gameState = 'ending';
@@ -1844,7 +1996,7 @@
   }
 
   function snapshotState() {
-    if (gameState !== 'play') return null;
+    if (gameState !== 'play' || duel) return null; // düelloda tek kişilik kayıt bozulmaz
     return {
       v: 2, board: Array.from(board), tray: tray.map(p => (p ? [p.shape.id, p.color] : null)),
       score, combo, comboMoves, maxCombo, linesTotal, moves, bestAtStart
@@ -2568,17 +2720,19 @@
   document.addEventListener('gesturestart', e => e.preventDefault());
   window.addEventListener('blur', () => { if (drag) endDrag(null, true); });
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) { if (drag) endDrag(null, true); Sound.pause(); return; }
-    // Geri dönünce ses durmuşsa (iPhone'da sık olur) tek dokunuşla devam ekranı
+    if (document.hidden) { if (drag) endDrag(null, true); pauseDuel(); Sound.pause(); return; }
+    // Geri dönünce ses durmuşsa (iPhone'da sık olur) tek dokunuşla devam ekranı; düelloda süre durmuştur
     setTimeout(() => {
-      if (!document.hidden && gameState === 'play' && soundOn && Sound.ac && Sound.ac.state !== 'running') showStart(true);
+      if (document.hidden) return;
+      if (duel) { if (duel.phase === 'paused' && ovDuel.hidden && ovConfirm.hidden) showDuelReady(true); return; }
+      if (gameState === 'play' && soundOn && Sound.ac && Sound.ac.state !== 'running') showStart(true);
     }, 600);
   });
 
   /* Başlangıç / devam ekranı: iPhone ve diğer tarayıcılar sesi yalnızca parmağı kaydırmadan yapılan bir dokunuşla
      açar; parça sürüklemek sayılmaz. Bu yüzden ses açıkken oyun tek dokunuşla başlar, ses ilk andan çalar. */
   function showStart(resume) {
-    if (!soundOn || !ovOver.hidden || !ovConfirm.hidden) return;
+    if (duel || !soundOn || !ovOver.hidden || !ovConfirm.hidden || !ovDuel.hidden) return;
     const cont = resume || moves > 0;
     $('btnStart').textContent = cont ? 'DEVAM ET' : 'OYNA';
     $('stSub').textContent = cont ? 'Kaldığın yerden devam et.' : 'Parçaları sürükle, satır ve sütunları patlat!';
@@ -2603,9 +2757,10 @@
   /* Bildirim düğmesi (oyunu durdurmaz): "SES DURDU" ya da "YENİ SÜRÜM VAR"; dokununca ses baştan kurulur ya da
      yeni sürüm açılır (oyun kayıtlı, kaldığı yerden sürer) */
   function showNotice() {
-    const kind = updateReady ? 'update' : soundOn && Sound.dead && ovStart.hidden ? 'sound' : '';
+    const kind = updateReady && !duel ? 'update' : soundOn && Sound.dead && ovStart.hidden ? 'sound' : '';
     noticeEl.dataset.kind = kind;
     noticeEl.hidden = !kind;
+    updateDuelBar();
     if (!kind) return;
     noticeEl.innerHTML = kind === 'update'
       ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0 0-4.5-4.5M12 14l4.5-4.5M5 19h14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>YENİ SÜRÜM VAR · GÜNCELLE'
@@ -2664,18 +2819,341 @@
   }
 
   btnSound.addEventListener('click', () => setSound(!soundOn, true));
-  btnRestart.addEventListener('click', () => {
-    if (gameState !== 'play' || moves === 0) { newGame(); return; }
+  let confirmMode = 'restart';
+  function askConfirm(mode) {
+    confirmMode = mode;
+    const d = mode === 'duel';
+    $('cfTitle').textContent = d ? 'DÜELLODAN ÇIK?' : 'YENİDEN BAŞLA?';
+    $('cfSub').textContent = d ? 'Düello biter, tek kişilik oyununa dönersin.' : 'Bu oyundaki skorun kaybolacak.';
+    $('btnConfirm').textContent = d ? 'ÇIK' : 'BAŞLA';
     ovConfirm.hidden = false;
     setModal();
     focusDialog('btnCancel', 'cfCard');
+  }
+  btnRestart.addEventListener('click', () => {
+    if (duel) { pauseDuel(); closeDuelPanel(); askConfirm('duel'); return; }
+    if (gameState !== 'play' || moves === 0) { newGame(); return; }
+    askConfirm('restart');
   });
-  const closeConfirm = () => { ovConfirm.hidden = true; setModal(); };
+  const closeConfirm = () => {
+    ovConfirm.hidden = true;
+    setModal();
+    if (duel && (duel.phase === 'paused' || duel.phase === 'ready')) showDuelReady(duel.phase === 'paused');
+  };
   $('btnCancel').addEventListener('click', closeConfirm);
-  $('btnConfirm').addEventListener('click', () => { ovConfirm.hidden = true; newGame(); });
+  $('btnConfirm').addEventListener('click', () => {
+    ovConfirm.hidden = true;
+    if (confirmMode === 'duel') exitDuel(); else newGame();
+  });
   $('btnAgain').addEventListener('click', () => { if (updateReady) { applyUpdate(); return; } newGame(); });
   ovConfirm.addEventListener('pointerdown', e => { if (e.target === ovConfirm) closeConfirm(); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !ovConfirm.hidden) closeConfirm(); });
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    if (!ovConfirm.hidden) closeConfirm();
+    else if (!ovDuel.hidden && !$('dSetup').hidden) cancelDuelSetup();
+  });
+
+
+  /* ================= İki kişilik düello ================= */
+  /* Sırayla, aynı sürede oynanır; en yüksek puan kazanır. İki oyuncu da aynı tohumla, yani aynı parçalarla
+     başlar (tahtalar farklılaştıkça parçalar da tahtaya göre değişir). Düello sürerken tek kişilik oyun kayıtlı
+     bekler ve rekor etkilenmez; düello bitince kaldığın yerden sürer. Uygulamadan çıkınca süre durur. */
+  const K_DUEL = 'bk-duel';
+  const DUEL_SECS = [60, 120, 180, 300];
+  const duelPrefs = Object.assign({ n1: '', n2: '', secs: 120 }, store.get(K_DUEL, null) || {});
+  let duelFrom = '', duelClock = 0, duelCountT = [], duelNextT = 0, duelBarKey = '';
+  const BEST_LABEL = hudBestLabel.innerHTML;
+  const CLOCK_LABEL = '<svg viewBox="0 0 24 24" aria-hidden="true" style="fill:none;stroke:var(--gold);stroke-width:2.6;stroke-linecap:round"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.8l2.6 1.6M9.5 3h5"/></svg>SÜRE';
+  const CROWN = '<svg viewBox="-11 -9 22 16" aria-hidden="true"><path d="M-9 6L-10 -5L-4 0L0 -8L4 0L10 -5L9 6Z"/></svg>';
+  const upTR = v => v.toLocaleUpperCase('tr-TR');
+  const duelName = t => duel.names[duel.order[t]]; // t. turu oynayan
+  function fmtClock(ms) { const v = Math.max(0, Math.ceil(ms / 1000)); return Math.floor(v / 60) + ':' + String(v % 60).padStart(2, '0'); }
+  const newSeed = () => (Math.random() * 4294967296) >>> 0;
+
+  // Türkçe ek: BARAN’DA / AYŞE’DE / MEHMET’TE (loc), BARAN’A / AYŞE’YE (dat)
+  function trSuffix(name, kind) {
+    const v0 = name.toLocaleLowerCase('tr-TR').replace(/[^a-zçğıöşü0-9]/g, '');
+    const vowels = 'aıoueiöü';
+    let v = 'e';
+    for (let i = v0.length - 1; i >= 0; i--) if (vowels.indexOf(v0[i]) >= 0) { v = v0[i]; break; }
+    const back = 'aıou'.indexOf(v) >= 0, last = v0[v0.length - 1] || 'e';
+    if (kind === 'loc') return name + '’' + ('fstkçşhp'.indexOf(last) >= 0 ? 'T' : 'D') + (back ? 'A' : 'E');
+    return name + '’' + (vowels.indexOf(last) >= 0 ? 'Y' : '') + (back ? 'A' : 'E');
+  }
+
+  function showDuelPanel(which) {
+    $('dSetup').hidden = which !== 'setup';
+    $('dReady').hidden = which !== 'ready';
+    $('dResult').hidden = which !== 'result';
+    ovDuel.hidden = false;
+    setModal();
+    const card = $('dCard');
+    card.style.animation = 'none';
+    void card.offsetWidth; // kart giriş animasyonu yeniden oynasın
+    card.style.animation = '';
+    setTimeout(() => focusDialog(which === 'setup' ? 'dGo' : which === 'ready' ? 'dStart' : 'dAgain', 'dCard'), 60);
+  }
+  function closeDuelPanel() { ovDuel.hidden = true; setModal(); }
+  function setDuelSecs(v) {
+    duelPrefs.secs = v;
+    $('dSecs').querySelectorAll('button').forEach(b => b.setAttribute('aria-checked', String(+b.dataset.secs === v)));
+  }
+
+  function openDuelSetup(from) {
+    if (duel) return;
+    if (drag) endDrag(null, true);
+    duelFrom = from || (gameState === 'play' ? 'play' : 'over');
+    ovStart.hidden = true;
+    ovOver.hidden = true;
+    ovConfirm.hidden = true;
+    $('dName1').value = duelPrefs.n1 || '';
+    $('dName2').value = duelPrefs.n2 || '';
+    setDuelSecs(DUEL_SECS.indexOf(duelPrefs.secs) >= 0 ? duelPrefs.secs : 120);
+    showDuelPanel('setup');
+  }
+  function cancelDuelSetup() {
+    closeDuelPanel();
+    if (duelFrom === 'over' && gameState === 'over') { ovOver.hidden = false; setModal(); }
+  }
+
+  function startDuel() {
+    if (duel) return;
+    const n1 = $('dName1').value.trim().slice(0, 12), n2 = $('dName2').value.trim().slice(0, 12);
+    duelPrefs.n1 = n1;
+    duelPrefs.n2 = n2;
+    store.set(K_DUEL, duelPrefs);
+    if (gameState === 'play') save(); // tek kişilik oyun kaldığı yerde bekler
+    const names = [upTR(n1) || '1. OYUNCU', upTR(n2) || '2. OYUNCU'];
+    if (names[0] === names[1]) names[1] += ' 2';
+    duel = { names, secs: duelPrefs.secs, order: [0, 1], turn: 0, results: [], wins: [0, 0], seed: newSeed(), phase: 'ready', left: duelPrefs.secs * 1000, endsAt: 0 };
+    hudBestLabel.innerHTML = CLOCK_LABEL;
+    btnDuel.hidden = true;
+    bestText = '';
+    prepareTurn();
+    showDuelReady(false);
+  }
+
+  // Tura hazırlık: aynı tohumla temiz tahta; geri sayım bitene kadar parça alınamaz
+  function prepareTurn() {
+    clearDuelTimers();
+    RNG = seededRng(duel.seed);
+    setTheme(0, false);
+    newGame();
+    gameState = 'wait';
+    overT0 = Infinity;
+    duel.left = duel.secs * 1000;
+    duel.phase = 'ready';
+    duelBarKey = '';
+    updateHud();
+    updateHint();
+  }
+
+  function showDuelReady(resume) {
+    const t = duel.turn, who = duelName(t), mins = duel.secs / 60;
+    $('dRound').textContent = resume ? 'SÜRE DURDU' : (t + 1) + '. TUR';
+    $('dWho').textContent = 'SIRA: ' + who;
+    $('dInfo').textContent = resume
+      ? 'Kalan süre ' + fmtClock(duel.left) + '. Hazır olunca devam et.'
+      : t === 0 ? mins + ' dakikan var. Süre bitince sıra ' + trSuffix(duelName(1), 'loc') + '.'
+      : 'Telefonu ' + trSuffix(who, 'dat') + ' ver. ' + mins + ' dakikan var.';
+    $('dTarget').hidden = t === 0;
+    if (t === 1) {
+      $('dTargetVal').textContent = fmt(duel.results[0].score);
+      $('dTargetWho').textContent = duelName(0);
+    }
+    $('dStart').textContent = resume ? 'DEVAM ET' : 'BAŞLA';
+    showDuelPanel('ready');
+    announce('Sıra ' + trSuffix(who, 'loc') + '.');
+  }
+
+  // BAŞLA / DEVAM ET: 3-2-1 geri sayım, sonra süre işler
+  function beginTurn() {
+    if (!duel || (duel.phase !== 'ready' && duel.phase !== 'paused')) return;
+    closeDuelPanel();
+    clearDuelTimers();
+    duel.phase = 'count';
+    const cx = L.bx + L.bs / 2, cy = L.by + L.bs / 2;
+    ['3', '2', '1'].forEach((txt, k) => duelCountT.push(setTimeout(() => {
+      spawnFloat(txt, cx, cy, 'count', 0, 800);
+      Sound.play('pick', 1 + k * 0.15);
+    }, k * 650)));
+    duelCountT.push(setTimeout(() => {
+      spawnFloat('BAŞLA!', cx, cy, 'praise', 0, 900);
+      Sound.play('clear3');
+      duel.phase = 'play';
+      gameState = 'play';
+      duel.endsAt = performance.now() + duel.left;
+      startDuelClock();
+      updateHud();
+      updateHint();
+      trayDirty = true;
+      wake();
+    }, 3 * 650));
+    updateHud();
+  }
+
+  function startDuelClock() {
+    clearInterval(duelClock);
+    let beep = 0;
+    duelClock = setInterval(() => {
+      if (!duel || duel.phase !== 'play') return;
+      duel.left = Math.max(0, duel.endsAt - performance.now());
+      updateHud();
+      const sec = Math.ceil(duel.left / 1000);
+      if (sec >= 1 && sec <= 5 && sec !== beep) { beep = sec; Sound.play('pick', 1.35); } // son 5 saniye
+      if (duel.left <= 0) endDuelTurn('time');
+    }, 100);
+  }
+  function clearDuelTimers() {
+    clearInterval(duelClock);
+    duelClock = 0;
+    duelCountT.forEach(clearTimeout);
+    duelCountT = [];
+    clearTimeout(duelNextT);
+  }
+
+  // Uygulamadan çıkınca ya da çıkış sorulurken süre durur
+  function pauseDuel() {
+    if (!duel) return false;
+    if (duel.phase === 'count') {
+      clearDuelTimers();
+      duel.phase = 'paused';
+      gameState = 'wait';
+      return true;
+    }
+    if (duel.phase !== 'play') return false;
+    duel.left = Math.max(0, duel.endsAt - performance.now());
+    clearDuelTimers();
+    if (drag) endDrag(null, true);
+    duel.phase = 'paused';
+    gameState = 'wait';
+    overT0 = Infinity;
+    updateHud();
+    updateHint();
+    return true;
+  }
+
+  // Tur biter: süre doldu ya da yer kalmadı
+  function endDuelTurn(reason) {
+    if (!duel || duel.phase !== 'play') return;
+    clearDuelTimers();
+    if (drag) endDrag(null, true);
+    if (reason === 'time') duel.left = 0;
+    duel.phase = 'over';
+    duel.results[duel.turn] = { score, lines: linesTotal, combo: maxCombo };
+    gameState = 'ending';
+    overT0 = performance.now() + 300;
+    updateHud();
+    updateHint();
+    trayDirty = true;
+    wake();
+    spawnFloat(reason === 'time' ? 'SÜRE DOLDU!' : 'YER KALMADI!', L.bx + L.bs / 2, L.by + L.bs * 0.42, 'praise', 0, 1500);
+    Sound.over();
+    announce(duelName(duel.turn) + ': ' + fmt(score) + ' puan.');
+    duelNextT = setTimeout(() => {
+      if (!duel) return;
+      gameState = 'over';
+      if (duel.turn === 0) { duel.turn = 1; prepareTurn(); showDuelReady(false); } else showDuelResult();
+    }, 1900);
+  }
+
+  function showDuelResult() {
+    const sc = [0, 0], st = [null, null];
+    for (let t = 0; t < 2; t++) { const pi = duel.order[t]; sc[pi] = duel.results[t].score; st[pi] = duel.results[t]; }
+    const win = sc[0] === sc[1] ? -1 : sc[0] > sc[1] ? 0 : 1;
+    if (win >= 0) duel.wins[win]++;
+    duel.phase = 'result';
+    $('dResBadge').textContent = win < 0 ? 'EŞİTLİK' : 'KAZANAN';
+    $('dResTitle').textContent = win < 0 ? 'BERABERE!' : duel.names[win] + ' KAZANDI!';
+    $('dResSub').textContent = duel.secs / 60 + ' dakikalık düello';
+    const box = $('dRes');
+    box.textContent = '';
+    for (let i = 0; i < 2; i++) {
+      const el = document.createElement('div');
+      el.className = 'pl' + (i === win ? ' win' : '');
+      const nm = document.createElement('span');
+      nm.className = 'pl-name';
+      if (i === win) nm.innerHTML = CROWN;
+      nm.appendChild(document.createTextNode(duel.names[i])); // ad metin olarak (HTML değil)
+      const sv = document.createElement('b');
+      sv.className = 'pl-score';
+      sv.textContent = fmt(sc[i]);
+      const sd = document.createElement('span');
+      sd.className = 'pl-stat';
+      sd.textContent = fmt(st[i].lines) + ' çizgi · kombo ×' + fmt(st[i].combo);
+      el.append(nm, sv, sd);
+      box.appendChild(el);
+    }
+    $('dSeries').textContent = 'SERİ · ' + duel.names[0] + ' ' + duel.wins[0] + ' – ' + duel.wins[1] + ' ' + duel.names[1];
+    showDuelPanel('result');
+    Sound.play('clear5');
+    announce(win < 0 ? 'Berabere.' : duel.names[win] + ' kazandı.');
+  }
+
+  function duelRematch() {
+    if (!duel) return;
+    duel.order = [duel.order[1], duel.order[0]]; // rövanşta öbürü başlar
+    duel.turn = 0;
+    duel.results = [];
+    duel.seed = newSeed();
+    prepareTurn();
+    showDuelReady(false);
+  }
+
+  function exitDuel() {
+    if (!duel) return;
+    clearDuelTimers();
+    if (drag) endDrag(null, true);
+    duel = null;
+    RNG = Math.random;
+    closeDuelPanel();
+    hudBestLabel.innerHTML = BEST_LABEL;
+    hudBestBox.classList.remove('urgent');
+    btnDuel.hidden = false;
+    duelBar.hidden = true;
+    bestText = '';
+    if (!load()) newGame(); // tek kişilik oyun kaldığı yerden
+    updateHud();
+    updateHint();
+    showNotice();
+  }
+
+  // Tahta ile raf arasındaki çubuk: ilk turda sıradaki oyuncu, ikinci turda hedef puan
+  function updateDuelBar() {
+    const on = !!duel && noticeEl.hidden && (duel.phase === 'count' || duel.phase === 'play' || duel.phase === 'over');
+    if (!on) { if (!duelBar.hidden) duelBar.hidden = true; duelBarKey = ''; return; }
+    const second = duel.turn === 1, target = second ? duel.results[0].score : 0, ahead = second && score > target;
+    const key = duel.turn + '|' + ahead + '|' + target;
+    if (key !== duelBarKey) {
+      duelBarKey = key;
+      duelBar.textContent = '';
+      const t1 = document.createElement('span'), t2 = document.createElement('b');
+      t1.textContent = second ? (ahead ? 'GEÇTİN!' : 'HEDEF') : 'SIRADAKİ';
+      t2.textContent = second ? duelName(0) + ' ' + fmt(target) : duelName(1);
+      duelBar.append(t1, t2);
+      duelBar.classList.toggle('ahead', ahead);
+    }
+    if (duelBar.hidden) { duelBar.hidden = false; placeDuelBar(); }
+  }
+  function placeDuelBar() {
+    if (!L.tray || duelBar.hidden) return;
+    const below = L.tray.y > L.by + L.bs;
+    duelBar.style.left = (below ? L.bx + L.bs / 2 : L.tray.x + L.tray.w / 2) + 'px';
+    duelBar.style.top = (below ? (L.by + L.bs + L.tray.y) / 2 : Math.min((L.hud.y + L.hud.h + L.tray.y) / 2, L.tray.y - 18)) + 'px';
+  }
+
+  btnDuel.addEventListener('click', () => openDuelSetup());
+  $('btnDuelStart').addEventListener('click', e => { e.stopPropagation(); openDuelSetup('start'); });
+  $('btnDuelOver').addEventListener('click', () => openDuelSetup('over'));
+  $('dGo').addEventListener('click', startDuel);
+  $('dCancel').addEventListener('click', cancelDuelSetup);
+  $('dSecs').addEventListener('click', e => { const b = e.target.closest('button[data-secs]'); if (b) setDuelSecs(+b.dataset.secs); });
+  $('dStart').addEventListener('click', beginTurn);
+  $('dQuit').addEventListener('click', () => { closeDuelPanel(); askConfirm('duel'); });
+  $('dAgain').addEventListener('click', duelRematch);
+  $('dExit').addEventListener('click', exitDuel);
+  $('dName1').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('dName2').focus(); } });
+  $('dName2').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); } });
 
   /* ================= Boyut değişimi ================= */
   let resizeRaf = 0;
@@ -2728,6 +3206,10 @@
       fakeStuckAudio: () => { const real = Sound.ac; Sound.ac = { state: 'running', currentTime: 12.5, resume() { return Promise.resolve(); }, close() { return Promise.resolve(); }, real }; Sound.ran = true; },
       watch: () => Sound.watch(),
       checkUpdate: () => checkUpdate(true),
+      // Düello: durum, süreyi kısaltma, tek kişilik oyunu kaydetme
+      duel: () => (duel ? { phase: duel.phase, turn: duel.turn, names: duel.names.slice(), order: duel.order.slice(), results: duel.results.slice(), wins: duel.wins.slice(), left: duel.left, seed: duel.seed } : null),
+      duelTime: ms => { if (duel && duel.phase === 'play') duel.endsAt = performance.now() + ms; },
+      save: () => save(),
       clearInfo: arr => { const ci = clearInfoOn(Int8Array.from(arr)); return { one: ci.one.map(q => q.id), multi: ci.multi.map(q => q.id), perfect: ci.perfect.map(q => q.id), top: ci.top }; },
       newGame
     };

@@ -13,6 +13,8 @@ Art arda her patlatma komboyu 1 artırır; 5 hamle boyunca hiç patlatma yapılm
 Tahtayı birkaç çizgiyi ya da tüm tahtayı birden patlatacak şekilde hazırlarsan oyun çoğu zaman o işi bitirecek
 parçayı da verir. Tahtayı tamamen boşaltmak (TERTEMİZ!) 1.000 × kombo bonus getirir.
 Parçalar çeşitli gelir: aynı parça art arda pek gelmez, oyun ilerledikçe (puan ya da hamle) zorlaşır.
+İKİ KİŞİLİK düello: sırayla aynı sürede (1, 2, 3 ya da 5 dakika) oynanır, en yüksek puanı yapan kazanır;
+iki oyuncu da aynı parçalarla başlar. Düello tek kişilik oyunu ve rekoru etkilemez.
 Ses kesilirse "SES DURDU" düğmesi çıkar, dokununca ses geri gelir. Yeni sürüm yayımlanınca açık oyunda
 "YENİ SÜRÜM VAR" düğmesi çıkar; oyun kayıtlı olduğu için güncelleme kaldığın yerden sürer.
 Her 10.000 puanda tema değişir: 20 tema sırayla döner. Puan arttıkça oyun zorlaşır.
