@@ -3,7 +3,7 @@
 > **Deneme sürümü**
 
 **Hero Uygulama Yazılım Teknolojileri Limited Şirketi** uygulamasıdır.
-Kurucu: Baran Yavuz · İletişim: [barannyavuuz@gmail.com](mailto:barannyavuuz@gmail.com)
+Kurucu: Baran Yavuz · İletişim: [iletisim@herouygulama.com.tr](mailto:iletisim@herouygulama.com.tr)
 
 Neon temalı 8x8 blok bulmaca oyunu. Parçaları sürükle, dolan satır ve sütunları patlat, komboyu sürdür.
 
