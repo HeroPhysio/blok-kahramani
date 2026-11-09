@@ -20,7 +20,7 @@
 <meta property="og:image:height" content="630">
 <meta property="og:locale" content="tr_TR">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="bk-build" content="26bfde7ba3">
+<meta name="bk-build" content="4849e6f774">
 <meta name="theme-color" content="#050817">
 <meta name="author" content="Baran Yavuz, Hero Uygulama Yazılım Teknolojileri Limited Şirketi">
 <meta name="color-scheme" content="dark">
@@ -2188,10 +2188,11 @@
      dokununca ses bağlamı baştan kurulur. Sürükleme sırasında sesi açmaya çalışılmaz (iPhone'da takılma yapar). */
   /* === YERLEŞTİRME SESLERİ (tema başına; açılışta bir kez çevrimdışı çizilir) ===
      Her tema kendi "koyma" sesini çalar: neon'da tok bir cam kırılması, okyanusta su damlası, ormanda tahta...
-     Hepsi kısa bir vuruştur (ton kaymaz, hemen biter) ve patlatma seslerinden kısıktır; seviyeleri birbirine eşitlenmiştir.
+     Hepsi kısa ve kurudur: yankı ve uzun çınlama yok, 3 kHz üstü neredeyse hiç yok (kulak tırmalamaz). Patlatma
+     seslerinden kısıktır; telefon hoparlöründe algılanan yükseklikleri birbirine eşitlenmiştir.
      Yapı taşları: modes = hızla sönen saf titreşimler [frekans, genlik, sönme (sn), varsa kayacağı frekans, kayma süresi],
-     noise = süzülmüş kısa gürültü (çıt, kum, cızırtı), wave = yumuşatılmış kare / testere dalga (retro, synth),
-     echo = kısa yankı. Rastgelelik sabit tohumla: ses her açılışta aynı çizilir. */
+     noise = süzülmüş kısa gürültü (çıt, kum), wave = yumuşatılmış kare / testere dalga (retro, synth).
+     Rastgelelik sabit tohumla: ses her açılışta aynı çizilir. */
   function placeKit(ac, dest) {
     const P = {};
     P.rng = s => () => ((s = (Math.imul(s, 1664525) + 1013904223) >>> 0) / 4294967296);
@@ -2233,129 +2234,122 @@
       osc.connect(f); f.connect(g); g.connect(to || dest);
       osc.start(t); osc.stop(t + 0.002 + o.tau * 8);
     };
-    P.echo = (delay, fb, wet) => {
-      const inp = ac.createGain(), d = ac.createDelay(1), g = ac.createGain(), w = ac.createGain();
-      d.delayTime.value = delay; g.gain.value = fb; w.gain.value = wet;
-      inp.connect(dest); inp.connect(d); d.connect(g); g.connect(d); d.connect(w); w.connect(dest);
-      return inp;
-    };
     return P;
   }
 
-  // [ad, seviye, süre (sn), tarif]: sıra THEMES ile aynı
+  // [ad, seviye, süre (sn), tarif]: sıra THEMES ile aynı. Seviyeler ölçülerek eşitlendi (place_lab)
   const PLACE_KIT = [
-    ['tok cam kırılması', 0.092, 0.3, P => {             // NEON KAHRAMAN: kalın camın tok vuruşu, ardından birkaç kırık parça çınlaması
-      P.noise(0, { a: 0.9, f: 2600, q: 0.7, tau: 0.0012, seed: 3 });
-      P.modes(0, [[360, 1, 0.024], [940, 0.85, 0.016]]);
-      P.modes(0, [[1720, 0.3, 0.034], [2650, 0.22, 0.026], [3570, 0.12, 0.02]]);
+    ['tok cam kırılması', 0.108, 0.3, P => {             // NEON KAHRAMAN: kalın camın tok vuruşu, ardından birkaç kısa kırık parça
+      P.noise(0, { a: 0.8, f: 2000, q: 0.7, tau: 0.001, seed: 3 });
+      P.modes(0, [[340, 1, 0.022], [880, 0.85, 0.014]]);
+      P.modes(0, [[1600, 0.28, 0.02], [2350, 0.16, 0.014]]);
       const r = P.rng(11);
       let t = 0.006;
-      for (let i = 0; i < 7; i++) {
-        t += 0.006 + r() * 0.012 * (1 + i * 0.2);
-        const f = 1900 + r() * 1900, a = 0.32 * Math.pow(0.8, i);
-        P.modes(t, [[f, a, 0.005 + r() * 0.007]]);
-        P.noise(t, { a: a * 0.6, f: f * 1.3, q: 1.2, tau: 0.0006, seed: 20 + i });
+      for (let i = 0; i < 6; i++) {
+        t += 0.005 + r() * 0.01 * (1 + i * 0.2);
+        const f = 1500 + r() * 1200, a = 0.28 * Math.pow(0.78, i);
+        P.modes(t, [[f, a, 0.004 + r() * 0.005]]);
+        P.noise(t, { a: a * 0.5, f: f * 1.2, q: 1.2, tau: 0.0006, seed: 20 + i });
       }
     }],
-    ['su damlası', 0.1, 0.3, P => {                     // OKYANUS: "blup" (yükselen kabarcık), arkasından küçük bir damla
-      P.noise(0, { a: 0.25, f: 1800, q: 0.8, tau: 0.001, seed: 5 });
-      P.modes(0, [[190, 0.35, 0.02]]);
-      P.modes(0.004, [[520, 1, 0.03, 1350, 0.045], [1040, 0.12, 0.018, 2700, 0.045]]);
-      P.modes(0.075, [[900, 0.22, 0.015, 1900, 0.025]]);
+    ['su damlası', 0.11, 0.3, P => {                     // OKYANUS: "blup" (yükselen kabarcık), arkasından küçük bir damla
+      P.noise(0, { a: 0.2, f: 1400, q: 0.8, tau: 0.001, seed: 5 });
+      P.modes(0, [[190, 0.35, 0.018]]);
+      P.modes(0.004, [[480, 1, 0.026, 1200, 0.04], [960, 0.06, 0.015, 2400, 0.04]]);
+      P.modes(0.07, [[700, 0.2, 0.013, 1400, 0.022]]);
     }],
-    ['sıcak marimba', 0.151, 0.3, P => {                  // GÜN BATIMI: yumuşak tokmakla sıcak bir marimba vuruşu
-      P.noise(0, { a: 0.12, f: 1500, q: 0.6, tau: 0.0012, seed: 9 });
-      P.modes(0, [[440, 1, 0.045], [1760, 0.28, 0.018], [4050, 0.06, 0.006]]);
+    ['sıcak marimba', 0.183, 0.3, P => {                  // GÜN BATIMI: yumuşak tokmakla kısa, sıcak bir marimba vuruşu
+      P.noise(0, { a: 0.1, f: 1300, q: 0.6, tau: 0.001, seed: 9 });
+      P.modes(0, [[440, 1, 0.032], [1760, 0.18, 0.012]]);
     }],
     ['tahta tok', 0.317, 0.3, P => {                      // ORMAN: tahtaya konan tahta taş
-      P.noise(0, { a: 0.35, f: 3000, q: 0.6, tau: 0.0008, seed: 7 });
-      P.modes(0, [[210, 0.22, 0.026], [640, 0.4, 0.018], [1460, 0.2, 0.008], [2350, 0.09, 0.0045]]);
+      P.noise(0, { a: 0.3, f: 2400, q: 0.6, tau: 0.0008, seed: 7 });
+      P.modes(0, [[210, 0.22, 0.024], [640, 0.4, 0.017], [1460, 0.18, 0.007], [2350, 0.05, 0.004]]);
     }],
-    ['jöle pop', 0.216, 0.3, P => {                       // ŞEKER: yumuşak, oyuncaklı "pop"
-      P.noise(0, { a: 0.25, f: 1500, q: 0.7, tau: 0.0008, seed: 9 });
-      P.modes(0, [[280, 1, 0.016, 760, 0.02], [560, 0.2, 0.01, 1520, 0.02]]);
+    ['jöle pop', 0.22, 0.3, P => {                       // ŞEKER: yumuşak, oyuncaklı "pop"
+      P.noise(0, { a: 0.2, f: 1400, q: 0.7, tau: 0.0008, seed: 9 });
+      P.modes(0, [[280, 1, 0.016, 760, 0.02], [560, 0.15, 0.01, 1520, 0.02]]);
     }],
-    ['taş ve kor', 0.205, 0.3, P => {                     // LAV: sıcak taş vuruşu, ardından kor çıtırtıları ve hafif cızırtı
-      P.noise(0, { a: 0.5, f: 1100, q: 0.6, tau: 0.002, seed: 13 });
-      P.modes(0, [[230, 0.35, 0.02], [470, 0.55, 0.016], [910, 0.45, 0.01], [1530, 0.2, 0.006]]);
+    ['taş ve kor', 0.221, 0.3, P => {                     // LAV: sıcak taş vuruşu ve birkaç kor çıtırtısı
+      P.noise(0, { a: 0.45, f: 1000, q: 0.6, tau: 0.002, seed: 13 });
+      P.modes(0, [[230, 0.35, 0.02], [470, 0.55, 0.015], [910, 0.4, 0.009], [1530, 0.15, 0.005]]);
       const r = P.rng(17);
       let t = 0.012;
-      for (let i = 0; i < 5; i++) {
-        t += 0.01 + r() * 0.03;
-        P.noise(t, { a: 0.45 * Math.pow(0.8, i) * (0.6 + r() * 0.4), f: 1800 + r() * 2200, q: 0.9, tau: 0.0008, seed: 40 + i });
+      for (let i = 0; i < 4; i++) {
+        t += 0.01 + r() * 0.025;
+        P.noise(t, { a: 0.4 * Math.pow(0.8, i) * (0.6 + r() * 0.4), f: 1400 + r() * 1200, q: 0.9, tau: 0.0008, seed: 40 + i });
       }
-      P.noise(0.004, { a: 0.05, f: 3000, q: 0.6, tau: 0.03, at: 0.01, seed: 18 });
     }],
-    ['buz çıtırtısı', 0.121, 0.3, P => {                  // BUZUL: buz küpü çınlaması ve çatlama çıtırtıları
-      P.noise(0, { a: 0.6, f: 3200, q: 0.9, tau: 0.0009, seed: 21 });
-      P.modes(0, [[540, 0.6, 0.014], [1150, 0.4, 0.01]]);
-      P.modes(0, [[2350, 0.4, 0.026], [3430, 0.25, 0.018], [4100, 0.08, 0.014]]);
-      P.noise(0.018, { a: 0.25, f: 2600, q: 1.2, tau: 0.0007, seed: 22 });
-      P.noise(0.031, { a: 0.15, f: 3000, q: 1.2, tau: 0.0007, seed: 23 });
+    ['buz çıtırtısı', 0.147, 0.3, P => {                  // BUZUL: buz küpü vuruşu ve iki küçük çatlama
+      P.noise(0, { a: 0.5, f: 2400, q: 0.9, tau: 0.0008, seed: 21 });
+      P.modes(0, [[540, 0.6, 0.013], [1150, 0.45, 0.009]]);
+      P.modes(0, [[1900, 0.3, 0.016], [2700, 0.15, 0.011]]);
+      P.noise(0.018, { a: 0.2, f: 2100, q: 1.2, tau: 0.0006, seed: 22 });
+      P.noise(0.031, { a: 0.12, f: 2400, q: 1.2, tau: 0.0006, seed: 23 });
     }],
-    ['uzay yankısı', 0.073, 0.45, P => {                  // GALAKSİ: yükselen "biup", uzayda yankılanır
-      const e = P.echo(0.085, 0.33, 0.45);
-      P.modes(0, [[660, 1, 0.035, 990, 0.03], [1320, 0.25, 0.02, 1980, 0.03], [1980, 0.15, 0.03]], e);
+    ['uzay bipi', 0.099, 0.3, P => {                      // GALAKSİ: yükselen "biu" ve hemen ardından küçük bir "ip" (yankısız)
+      P.modes(0, [[520, 1, 0.028, 880, 0.03], [1040, 0.15, 0.014, 1760, 0.03]]);
+      P.modes(0.06, [[780, 0.4, 0.02, 1170, 0.025]]);
     }],
-    ['altın sikke', 0.07, 0.3, P => {                    // ALTIN SARAY: iki altın sikkenin şıngırtısı
-      P.noise(0, { a: 0.35, f: 3500, q: 1, tau: 0.0007, seed: 31 });
-      P.modes(0, [[420, 0.5, 0.016], [900, 0.25, 0.01]]);
-      P.modes(0, [[1560, 0.6, 0.04], [2520, 0.4, 0.032], [3610, 0.2, 0.024]]);
-      P.noise(0.028, { a: 0.18, f: 3500, q: 1, tau: 0.0007, seed: 32 });
-      P.modes(0.028, [[1640, 0.35, 0.034], [2690, 0.22, 0.026]]);
+    ['altın sikke', 0.106, 0.3, P => {                    // ALTIN SARAY: iki altın sikkenin kısa şıngırtısı
+      P.noise(0, { a: 0.3, f: 2500, q: 1, tau: 0.0007, seed: 31 });
+      P.modes(0, [[420, 0.5, 0.015], [900, 0.3, 0.01]]);
+      P.modes(0, [[1300, 0.5, 0.026], [2100, 0.28, 0.018]]);
+      P.noise(0.026, { a: 0.15, f: 2500, q: 1, tau: 0.0007, seed: 32 });
+      P.modes(0.026, [[1380, 0.3, 0.022], [2240, 0.15, 0.015]]);
     }],
-    ['dijital bip', 0.13, 0.3, P => {                    // SİBER: iki basamaklı dijital "bi-bip"
-      P.noise(0, { a: 0.2, f: 4000, q: 0.5, tau: 0.0005, seed: 41 });
-      P.wave(0, { type: 'square', f: 880, f2: 1320, st: 0.025, a: 0.5, tau: 0.03, lp: 2400 });
+    ['dijital bip', 0.157, 0.3, P => {                    // SİBER: iki basamaklı dijital "bi-bip"
+      P.noise(0, { a: 0.15, f: 2500, q: 0.5, tau: 0.0005, seed: 41 });
+      P.wave(0, { type: 'square', f: 660, f2: 990, st: 0.025, a: 0.5, tau: 0.026, lp: 1800 });
     }],
-    ['kalimba', 0.073, 0.3, P => {                        // SAKURA: tatlı bir kalimba teli
-      P.noise(0, { a: 0.15, f: 2500, q: 0.8, tau: 0.0008, seed: 51 });
-      P.modes(0, [[300, 0.15, 0.012], [784, 1, 0.05], [1568, 0.08, 0.025], [4620, 0.12, 0.008]]);
+    ['kalimba', 0.101, 0.3, P => {                        // SAKURA: kısa, tatlı bir kalimba teli
+      P.noise(0, { a: 0.12, f: 2000, q: 0.8, tau: 0.0008, seed: 51 });
+      P.modes(0, [[300, 0.15, 0.012], [660, 1, 0.032], [1320, 0.06, 0.016]]);
     }],
-    ['kum', 0.289, 0.3, P => {                            // ÇÖL: kuma düşen boğuk vuruş ve kum hışırtısı
-      P.modes(0, [[210, 0.3, 0.018], [450, 0.45, 0.012], [900, 0.35, 0.007]]);
-      P.noise(0, { a: 0.5, f: 1800, q: 0.9, tau: 0.022, at: 0.005, seed: 61 });
-      P.noise(0.01, { a: 0.2, f: 3000, q: 1, tau: 0.015, at: 0.003, seed: 62 });
+    ['kum', 0.285, 0.3, P => {                            // ÇÖL: kuma düşen boğuk vuruş ve kum hışırtısı
+      P.modes(0, [[210, 0.3, 0.017], [450, 0.45, 0.012], [900, 0.3, 0.007]]);
+      P.noise(0, { a: 0.5, f: 1500, q: 0.9, tau: 0.02, at: 0.005, seed: 61 });
+      P.noise(0.01, { a: 0.18, f: 2300, q: 1, tau: 0.013, at: 0.003, seed: 62 });
     }],
-    ['ışıltı', 0.078, 0.3, P => {                         // KUZEY IŞIKLARI: iki notalı büyülü "ding-ding" ve hafif nefes
-      P.noise(0, { a: 0.08, f: 3200, q: 0.5, tau: 0.035, at: 0.012, seed: 71 });
-      P.modes(0, [[1046.5, 0.6, 0.05], [2093, 0.1, 0.025]]);
-      P.modes(0.035, [[1568, 0.45, 0.045], [3136, 0.06, 0.02]]);
+    ['ışıltı', 0.135, 0.3, P => {                         // KUZEY IŞIKLARI: iki notalı yumuşak "ding-ding"
+      P.noise(0, { a: 0.05, f: 2000, q: 0.5, tau: 0.02, at: 0.008, seed: 71 });
+      P.modes(0, [[523.25, 0.7, 0.03], [1046.5, 0.08, 0.015]]);
+      P.modes(0.03, [[784, 0.5, 0.028], [1568, 0.05, 0.012]]);
     }],
-    ['kabarcıklar', 0.104, 0.3, P => {                    // MERCAN: su altında yükselen üç kabarcık
-      P.modes(0, [[160, 0.5, 0.018]]);
-      P.modes(0.002, [[700, 0.8, 0.018, 1500, 0.03]]);
-      P.modes(0.03, [[950, 0.55, 0.014, 2000, 0.025]]);
-      P.modes(0.052, [[1250, 0.35, 0.012, 2500, 0.02]]);
+    ['kabarcıklar', 0.118, 0.3, P => {                    // MERCAN: su altında yükselen üç kabarcık
+      P.modes(0, [[160, 0.5, 0.016]]);
+      P.modes(0.002, [[600, 0.8, 0.016, 1200, 0.026]]);
+      P.modes(0.028, [[800, 0.55, 0.013, 1600, 0.022]]);
+      P.modes(0.05, [[1000, 0.35, 0.011, 1900, 0.018]]);
     }],
-    ['8-bit', 0.183, 0.3, P => {                          // RETRO ATARİ: eski oyun konsolu gibi yukarı kayan "blip"
-      P.wave(0, { type: 'square', f: 330, glide: 990, sw: 0.035, a: 0.4, tau: 0.04, lp: 2800 });
+    ['8-bit', 0.215, 0.3, P => {                          // RETRO ATARİ: eski oyun konsolu gibi yukarı kayan "blip"
+      P.wave(0, { type: 'square', f: 330, glide: 880, sw: 0.035, a: 0.4, tau: 0.032, lp: 2000 });
     }],
-    ['pırıltı', 0.195, 0.3, P => {                        // GÖKKUŞAĞI: küçük bir pop ve yükselen üç pırıltı
-      P.noise(0, { a: 0.2, f: 1500, q: 0.7, tau: 0.0008, seed: 81 });
+    ['pırıltı', 0.193, 0.3, P => {                        // GÖKKUŞAĞI: küçük bir pop ve yükselen üç kısa nota
+      P.noise(0, { a: 0.18, f: 1400, q: 0.7, tau: 0.0008, seed: 81 });
       P.modes(0, [[330, 0.8, 0.014, 800, 0.018]]);
-      P.modes(0.018, [[2093, 0.22, 0.02]]);
-      P.modes(0.034, [[2637, 0.16, 0.018]]);
-      P.modes(0.05, [[3136, 0.11, 0.016]]);
+      P.modes(0.018, [[1046.5, 0.25, 0.016]]);
+      P.modes(0.032, [[1318.5, 0.2, 0.015]]);
+      P.modes(0.046, [[1568, 0.15, 0.014]]);
     }],
-    ['fincan', 0.102, 0.3, P => {                         // KAHVE: tabağa konan porselen fincan
-      P.noise(0, { a: 0.4, f: 3000, q: 0.8, tau: 0.0008, seed: 91 });
-      P.modes(0, [[300, 0.5, 0.018], [760, 0.3, 0.012]]);
-      P.modes(0, [[1180, 0.55, 0.035], [2870, 0.35, 0.025], [4450, 0.12, 0.015]]);
+    ['fincan', 0.16, 0.3, P => {                         // KAHVE: tabağa konan porselen fincan
+      P.noise(0, { a: 0.35, f: 2200, q: 0.8, tau: 0.0008, seed: 91 });
+      P.modes(0, [[300, 0.5, 0.016], [760, 0.35, 0.011]]);
+      P.modes(0, [[1100, 0.45, 0.022], [2400, 0.18, 0.013]]);
     }],
-    ['bambu', 0.126, 0.3, P => {                          // TROPİK: içi boş bambu / hindistancevizi "klok"
-      P.noise(0, { a: 0.3, f: 2200, q: 0.7, tau: 0.001, seed: 101 });
-      P.modes(0, [[260, 0.2, 0.02]]);
-      P.modes(0, [[520, 1, 0.035], [1560, 0.35, 0.014], [2600, 0.12, 0.007]]);
+    ['bambu', 0.145, 0.3, P => {                          // TROPİK: içi boş bambu / hindistancevizi "klok"
+      P.noise(0, { a: 0.25, f: 1800, q: 0.7, tau: 0.001, seed: 101 });
+      P.modes(0, [[260, 0.2, 0.018]]);
+      P.modes(0, [[520, 1, 0.026], [1560, 0.25, 0.011]]);
     }],
-    ['synth', 0.27, 0.3, P => {                          // NEON ŞEHİR: 80'ler synth "pluck"u (süzgeç hızla kapanır)
-      P.wave(0, { type: 'sawtooth', f: 392, a: 0.35, tau: 0.06, lp: 3200, lp2: 500, lpT: 0.05 });
-      P.wave(0, { type: 'sawtooth', f: 395, a: 0.25, tau: 0.06, lp: 3200, lp2: 500, lpT: 0.05 });
+    ['synth', 0.326, 0.3, P => {                          // NEON ŞEHİR: 80'ler synth "pluck"u (süzgeç hızla kapanır)
+      P.wave(0, { type: 'sawtooth', f: 330, a: 0.35, tau: 0.04, lp: 2200, lp2: 450, lpT: 0.04 });
+      P.wave(0, { type: 'sawtooth', f: 332.5, a: 0.25, tau: 0.04, lp: 2200, lp2: 450, lpT: 0.04 });
     }],
-    ['gümüş tın', 0.11, 0.3, P => {                      // GÜMÜŞ: gümüş tabağa değen kaşık
-      P.noise(0, { a: 0.35, f: 3800, q: 1, tau: 0.0006, seed: 111 });
-      P.modes(0, [[680, 0.45, 0.014], [1240, 0.2, 0.009]]);
-      P.modes(0, [[2240, 0.45, 0.032], [3560, 0.25, 0.024], [5100, 0.08, 0.015]]);
+    ['gümüş tın', 0.159, 0.3, P => {                      // GÜMÜŞ: gümüş tabağa değen kaşık
+      P.noise(0, { a: 0.3, f: 2600, q: 1, tau: 0.0006, seed: 111 });
+      P.modes(0, [[680, 0.5, 0.013], [1240, 0.3, 0.009]]);
+      P.modes(0, [[1800, 0.35, 0.018], [2800, 0.15, 0.012]]);
     }]
   ];
   /* === YERLEŞTİRME SESLERİ BİTİŞ === */
@@ -2383,7 +2377,7 @@
     // Ana çıkış: sıkıştırıcı, sesleri telefon hoparlöründe dolgun ve eşit yüksek tutar (patlamalarda cızırtı yapmadan)
     chain(ac) {
       const soft = ac.createBiquadFilter(), comp = ac.createDynamicsCompressor();
-      soft.type = 'lowpass'; soft.frequency.value = 4200; soft.Q.value = 0.5; // tiz sertliği alır
+      soft.type = 'lowpass'; soft.frequency.value = 3400; soft.Q.value = 0.5; // tizi alır: kulak tırmalamaz
       comp.threshold.value = -20; comp.knee.value = 18; comp.ratio.value = 3; comp.attack.value = 0.005; comp.release.value = 0.25;
       const out = ac.createGain(), post = ac.createGain();
       out.gain.value = 1;
@@ -2513,7 +2507,7 @@
       else if (name === 'over') [659.25, 523.25, 440, 349.23].forEach((f, i) => tone(f, 0.6, 0.17, i * 0.22, 0, 0.2)); // yavaş inen notalar
       else { // clearN: N notalı yumuşak zil arpeji (do majör pentatonik)
         const n = +name.slice(5);
-        [523.25, 659.25, 783.99, 880, 1046.5, 1318.5].slice(0, n).forEach((f, i) => tone(f, 0.5, 0.17, i * 0.07, 0, 0.16));
+        [523.25, 659.25, 783.99, 880, 1046.5, 1318.5].slice(0, n).forEach((f, i) => tone(f, 0.36, 0.17, i * 0.07, 0, 0.08));
       }
     },
     renderOne(OAC, name, dur) {
@@ -2562,8 +2556,8 @@
       this.play(this.bufs && this.bufs[k] ? k : 'place0', Math.pow(2, (1.5 - (Math.min(Math.max(cells || 5, 1), 9) - 1) * 0.375 + (Math.random() - 0.5) * 0.5) / 12));
     },
     bad() { this.play('bad'); },
-    // kombo arttıkça ton biraz yükselir (en çok 5 yarım ses): tizleşip rahatsız etmez
-    clear(lines, cmb) { this.play('clear' + Math.min(6, 2 + lines), Math.pow(2, Math.min(Math.max(cmb - 1, 0), 5) / 12)); },
+    // kombo arttıkça ton biraz yükselir (en çok 3 yarım ses): yüksek komboda da tizleşip rahatsız etmez
+    clear(lines, cmb) { this.play('clear' + Math.min(6, 2 + lines), Math.pow(2, Math.min(Math.max(cmb - 1, 0), 3) / 12)); },
     over() { this.play('over'); }
   };
 
@@ -3513,7 +3507,7 @@
       renderSound: async (name, a, b) => {
         await Sound.prerender();
         const key = name === 'clear' ? 'clear' + Math.min(6, 2 + a) : name;
-        const rate = name === 'clear' ? Math.pow(2, Math.min(Math.max(b - 1, 0), 5) / 12) : 1;
+        const rate = name === 'clear' ? Math.pow(2, Math.min(Math.max(b - 1, 0), 3) / 12) : 1;
         const ac = new OfflineAudioContext(1, Math.round(44100 * 2.6), 44100), src = ac.createBufferSource();
         src.buffer = Sound.bufs[key];
         src.playbackRate.value = rate;
