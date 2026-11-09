@@ -20,7 +20,7 @@
 <meta property="og:image:height" content="630">
 <meta property="og:locale" content="tr_TR">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="bk-build" content="a24d229c23">
+<meta name="bk-build" content="26bfde7ba3">
 <meta name="theme-color" content="#050817">
 <meta name="author" content="Baran Yavuz, Hero Uygulama Yazılım Teknolojileri Limited Şirketi">
 <meta name="color-scheme" content="dark">
@@ -2186,6 +2186,180 @@
      Uzun oyunda iPhone sesi kesebilir (bildirim, arama, ses yolu değişimi): bekçi bunu fark eder (bağlam durmuş
      ya da zamanı ilerlemiyor), iki kez kendiliğinden açmayı dener, olmazsa "SES DURDU" düğmesi çıkar; ona
      dokununca ses bağlamı baştan kurulur. Sürükleme sırasında sesi açmaya çalışılmaz (iPhone'da takılma yapar). */
+  /* === YERLEŞTİRME SESLERİ (tema başına; açılışta bir kez çevrimdışı çizilir) ===
+     Her tema kendi "koyma" sesini çalar: neon'da tok bir cam kırılması, okyanusta su damlası, ormanda tahta...
+     Hepsi kısa bir vuruştur (ton kaymaz, hemen biter) ve patlatma seslerinden kısıktır; seviyeleri birbirine eşitlenmiştir.
+     Yapı taşları: modes = hızla sönen saf titreşimler [frekans, genlik, sönme (sn), varsa kayacağı frekans, kayma süresi],
+     noise = süzülmüş kısa gürültü (çıt, kum, cızırtı), wave = yumuşatılmış kare / testere dalga (retro, synth),
+     echo = kısa yankı. Rastgelelik sabit tohumla: ses her açılışta aynı çizilir. */
+  function placeKit(ac, dest) {
+    const P = {};
+    P.rng = s => () => ((s = (Math.imul(s, 1664525) + 1013904223) >>> 0) / 4294967296);
+    P.modes = (t, list, to) => list.forEach(([f, a, tau, f2, sw]) => {
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.frequency.setValueAtTime(f, t);
+      if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + (sw || tau));
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(a, t + 0.0015);
+      g.gain.setTargetAtTime(0, t + 0.0015, tau);
+      o.connect(g); g.connect(to || dest);
+      o.start(t); o.stop(t + 0.0015 + tau * 8);
+    });
+    // o: { a: genlik, f: süzgeç frekansı, q, tau: sönme, at: açılma süresi, type: süzgeç türü, seed }
+    P.noise = (t, o, to) => {
+      const len = Math.min(0.3, (o.at || 0) + o.tau * 8 + 0.002);
+      const n = Math.ceil(ac.sampleRate * len), b = ac.createBuffer(1, n, ac.sampleRate), d = b.getChannelData(0), r = P.rng(o.seed || 7);
+      for (let i = 0; i < n; i++) d[i] = r() * 2 - 1;
+      const src = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain();
+      src.buffer = b; f.type = o.type || 'bandpass'; f.frequency.value = o.f; f.Q.value = o.q || 0.7;
+      g.gain.setValueAtTime(o.at ? 0 : o.a, t);
+      if (o.at) g.gain.linearRampToValueAtTime(o.a, t + o.at);
+      g.gain.setTargetAtTime(0, t + (o.at || 0), o.tau);
+      src.connect(f); f.connect(g); g.connect(to || dest);
+      src.start(t); src.stop(t + len);
+    };
+    // o: { type, f, f2 + st: basamaklı geçiş, glide + sw: kayma, a, tau, lp: süzgeç, lp2 + lpT: süzgeç kapanışı }
+    P.wave = (t, o, to) => {
+      const osc = ac.createOscillator(), f = ac.createBiquadFilter(), g = ac.createGain();
+      osc.type = o.type;
+      osc.frequency.setValueAtTime(o.f, t);
+      if (o.f2) osc.frequency.setValueAtTime(o.f2, t + o.st);
+      if (o.glide) osc.frequency.exponentialRampToValueAtTime(o.glide, t + o.sw);
+      f.type = 'lowpass'; f.Q.value = 0.7; f.frequency.setValueAtTime(o.lp, t);
+      if (o.lp2) f.frequency.exponentialRampToValueAtTime(o.lp2, t + o.lpT);
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(o.a, t + 0.002);
+      g.gain.setTargetAtTime(0, t + 0.002, o.tau);
+      osc.connect(f); f.connect(g); g.connect(to || dest);
+      osc.start(t); osc.stop(t + 0.002 + o.tau * 8);
+    };
+    P.echo = (delay, fb, wet) => {
+      const inp = ac.createGain(), d = ac.createDelay(1), g = ac.createGain(), w = ac.createGain();
+      d.delayTime.value = delay; g.gain.value = fb; w.gain.value = wet;
+      inp.connect(dest); inp.connect(d); d.connect(g); g.connect(d); d.connect(w); w.connect(dest);
+      return inp;
+    };
+    return P;
+  }
+
+  // [ad, seviye, süre (sn), tarif]: sıra THEMES ile aynı
+  const PLACE_KIT = [
+    ['tok cam kırılması', 0.092, 0.3, P => {             // NEON KAHRAMAN: kalın camın tok vuruşu, ardından birkaç kırık parça çınlaması
+      P.noise(0, { a: 0.9, f: 2600, q: 0.7, tau: 0.0012, seed: 3 });
+      P.modes(0, [[360, 1, 0.024], [940, 0.85, 0.016]]);
+      P.modes(0, [[1720, 0.3, 0.034], [2650, 0.22, 0.026], [3570, 0.12, 0.02]]);
+      const r = P.rng(11);
+      let t = 0.006;
+      for (let i = 0; i < 7; i++) {
+        t += 0.006 + r() * 0.012 * (1 + i * 0.2);
+        const f = 1900 + r() * 1900, a = 0.32 * Math.pow(0.8, i);
+        P.modes(t, [[f, a, 0.005 + r() * 0.007]]);
+        P.noise(t, { a: a * 0.6, f: f * 1.3, q: 1.2, tau: 0.0006, seed: 20 + i });
+      }
+    }],
+    ['su damlası', 0.1, 0.3, P => {                     // OKYANUS: "blup" (yükselen kabarcık), arkasından küçük bir damla
+      P.noise(0, { a: 0.25, f: 1800, q: 0.8, tau: 0.001, seed: 5 });
+      P.modes(0, [[190, 0.35, 0.02]]);
+      P.modes(0.004, [[520, 1, 0.03, 1350, 0.045], [1040, 0.12, 0.018, 2700, 0.045]]);
+      P.modes(0.075, [[900, 0.22, 0.015, 1900, 0.025]]);
+    }],
+    ['sıcak marimba', 0.151, 0.3, P => {                  // GÜN BATIMI: yumuşak tokmakla sıcak bir marimba vuruşu
+      P.noise(0, { a: 0.12, f: 1500, q: 0.6, tau: 0.0012, seed: 9 });
+      P.modes(0, [[440, 1, 0.045], [1760, 0.28, 0.018], [4050, 0.06, 0.006]]);
+    }],
+    ['tahta tok', 0.317, 0.3, P => {                      // ORMAN: tahtaya konan tahta taş
+      P.noise(0, { a: 0.35, f: 3000, q: 0.6, tau: 0.0008, seed: 7 });
+      P.modes(0, [[210, 0.22, 0.026], [640, 0.4, 0.018], [1460, 0.2, 0.008], [2350, 0.09, 0.0045]]);
+    }],
+    ['jöle pop', 0.216, 0.3, P => {                       // ŞEKER: yumuşak, oyuncaklı "pop"
+      P.noise(0, { a: 0.25, f: 1500, q: 0.7, tau: 0.0008, seed: 9 });
+      P.modes(0, [[280, 1, 0.016, 760, 0.02], [560, 0.2, 0.01, 1520, 0.02]]);
+    }],
+    ['taş ve kor', 0.205, 0.3, P => {                     // LAV: sıcak taş vuruşu, ardından kor çıtırtıları ve hafif cızırtı
+      P.noise(0, { a: 0.5, f: 1100, q: 0.6, tau: 0.002, seed: 13 });
+      P.modes(0, [[230, 0.35, 0.02], [470, 0.55, 0.016], [910, 0.45, 0.01], [1530, 0.2, 0.006]]);
+      const r = P.rng(17);
+      let t = 0.012;
+      for (let i = 0; i < 5; i++) {
+        t += 0.01 + r() * 0.03;
+        P.noise(t, { a: 0.45 * Math.pow(0.8, i) * (0.6 + r() * 0.4), f: 1800 + r() * 2200, q: 0.9, tau: 0.0008, seed: 40 + i });
+      }
+      P.noise(0.004, { a: 0.05, f: 3000, q: 0.6, tau: 0.03, at: 0.01, seed: 18 });
+    }],
+    ['buz çıtırtısı', 0.121, 0.3, P => {                  // BUZUL: buz küpü çınlaması ve çatlama çıtırtıları
+      P.noise(0, { a: 0.6, f: 3200, q: 0.9, tau: 0.0009, seed: 21 });
+      P.modes(0, [[540, 0.6, 0.014], [1150, 0.4, 0.01]]);
+      P.modes(0, [[2350, 0.4, 0.026], [3430, 0.25, 0.018], [4100, 0.08, 0.014]]);
+      P.noise(0.018, { a: 0.25, f: 2600, q: 1.2, tau: 0.0007, seed: 22 });
+      P.noise(0.031, { a: 0.15, f: 3000, q: 1.2, tau: 0.0007, seed: 23 });
+    }],
+    ['uzay yankısı', 0.073, 0.45, P => {                  // GALAKSİ: yükselen "biup", uzayda yankılanır
+      const e = P.echo(0.085, 0.33, 0.45);
+      P.modes(0, [[660, 1, 0.035, 990, 0.03], [1320, 0.25, 0.02, 1980, 0.03], [1980, 0.15, 0.03]], e);
+    }],
+    ['altın sikke', 0.07, 0.3, P => {                    // ALTIN SARAY: iki altın sikkenin şıngırtısı
+      P.noise(0, { a: 0.35, f: 3500, q: 1, tau: 0.0007, seed: 31 });
+      P.modes(0, [[420, 0.5, 0.016], [900, 0.25, 0.01]]);
+      P.modes(0, [[1560, 0.6, 0.04], [2520, 0.4, 0.032], [3610, 0.2, 0.024]]);
+      P.noise(0.028, { a: 0.18, f: 3500, q: 1, tau: 0.0007, seed: 32 });
+      P.modes(0.028, [[1640, 0.35, 0.034], [2690, 0.22, 0.026]]);
+    }],
+    ['dijital bip', 0.13, 0.3, P => {                    // SİBER: iki basamaklı dijital "bi-bip"
+      P.noise(0, { a: 0.2, f: 4000, q: 0.5, tau: 0.0005, seed: 41 });
+      P.wave(0, { type: 'square', f: 880, f2: 1320, st: 0.025, a: 0.5, tau: 0.03, lp: 2400 });
+    }],
+    ['kalimba', 0.073, 0.3, P => {                        // SAKURA: tatlı bir kalimba teli
+      P.noise(0, { a: 0.15, f: 2500, q: 0.8, tau: 0.0008, seed: 51 });
+      P.modes(0, [[300, 0.15, 0.012], [784, 1, 0.05], [1568, 0.08, 0.025], [4620, 0.12, 0.008]]);
+    }],
+    ['kum', 0.289, 0.3, P => {                            // ÇÖL: kuma düşen boğuk vuruş ve kum hışırtısı
+      P.modes(0, [[210, 0.3, 0.018], [450, 0.45, 0.012], [900, 0.35, 0.007]]);
+      P.noise(0, { a: 0.5, f: 1800, q: 0.9, tau: 0.022, at: 0.005, seed: 61 });
+      P.noise(0.01, { a: 0.2, f: 3000, q: 1, tau: 0.015, at: 0.003, seed: 62 });
+    }],
+    ['ışıltı', 0.078, 0.3, P => {                         // KUZEY IŞIKLARI: iki notalı büyülü "ding-ding" ve hafif nefes
+      P.noise(0, { a: 0.08, f: 3200, q: 0.5, tau: 0.035, at: 0.012, seed: 71 });
+      P.modes(0, [[1046.5, 0.6, 0.05], [2093, 0.1, 0.025]]);
+      P.modes(0.035, [[1568, 0.45, 0.045], [3136, 0.06, 0.02]]);
+    }],
+    ['kabarcıklar', 0.104, 0.3, P => {                    // MERCAN: su altında yükselen üç kabarcık
+      P.modes(0, [[160, 0.5, 0.018]]);
+      P.modes(0.002, [[700, 0.8, 0.018, 1500, 0.03]]);
+      P.modes(0.03, [[950, 0.55, 0.014, 2000, 0.025]]);
+      P.modes(0.052, [[1250, 0.35, 0.012, 2500, 0.02]]);
+    }],
+    ['8-bit', 0.183, 0.3, P => {                          // RETRO ATARİ: eski oyun konsolu gibi yukarı kayan "blip"
+      P.wave(0, { type: 'square', f: 330, glide: 990, sw: 0.035, a: 0.4, tau: 0.04, lp: 2800 });
+    }],
+    ['pırıltı', 0.195, 0.3, P => {                        // GÖKKUŞAĞI: küçük bir pop ve yükselen üç pırıltı
+      P.noise(0, { a: 0.2, f: 1500, q: 0.7, tau: 0.0008, seed: 81 });
+      P.modes(0, [[330, 0.8, 0.014, 800, 0.018]]);
+      P.modes(0.018, [[2093, 0.22, 0.02]]);
+      P.modes(0.034, [[2637, 0.16, 0.018]]);
+      P.modes(0.05, [[3136, 0.11, 0.016]]);
+    }],
+    ['fincan', 0.102, 0.3, P => {                         // KAHVE: tabağa konan porselen fincan
+      P.noise(0, { a: 0.4, f: 3000, q: 0.8, tau: 0.0008, seed: 91 });
+      P.modes(0, [[300, 0.5, 0.018], [760, 0.3, 0.012]]);
+      P.modes(0, [[1180, 0.55, 0.035], [2870, 0.35, 0.025], [4450, 0.12, 0.015]]);
+    }],
+    ['bambu', 0.126, 0.3, P => {                          // TROPİK: içi boş bambu / hindistancevizi "klok"
+      P.noise(0, { a: 0.3, f: 2200, q: 0.7, tau: 0.001, seed: 101 });
+      P.modes(0, [[260, 0.2, 0.02]]);
+      P.modes(0, [[520, 1, 0.035], [1560, 0.35, 0.014], [2600, 0.12, 0.007]]);
+    }],
+    ['synth', 0.27, 0.3, P => {                          // NEON ŞEHİR: 80'ler synth "pluck"u (süzgeç hızla kapanır)
+      P.wave(0, { type: 'sawtooth', f: 392, a: 0.35, tau: 0.06, lp: 3200, lp2: 500, lpT: 0.05 });
+      P.wave(0, { type: 'sawtooth', f: 395, a: 0.25, tau: 0.06, lp: 3200, lp2: 500, lpT: 0.05 });
+    }],
+    ['gümüş tın', 0.11, 0.3, P => {                      // GÜMÜŞ: gümüş tabağa değen kaşık
+      P.noise(0, { a: 0.35, f: 3800, q: 1, tau: 0.0006, seed: 111 });
+      P.modes(0, [[680, 0.45, 0.014], [1240, 0.2, 0.009]]);
+      P.modes(0, [[2240, 0.45, 0.032], [3560, 0.25, 0.024], [5100, 0.08, 0.015]]);
+    }]
+  ];
+  /* === YERLEŞTİRME SESLERİ BİTİŞ === */
+
   const Sound = {
     ac: null, out: null, bufs: null, rendering: null, resumeT: -1e9, ran: false, silentEl: null,
     dead: false, stall: 0, lastT: -1, autoTries: 0,
@@ -2309,30 +2483,15 @@
     },
     // Ses tarifleri: düğümleri verilen (çevrimdışı) bağlama kurar; açılışta bir kez çizilir.
     // Tonlar yumuşak sinüs: yavaşça açılır, zil ya da marimba gibi kendiliğinden söner; hışırtı ve sert dalga yok.
-    // Yerleştirme sesi ise ton değil vuruş: tahta bir taşın tahtaya konması gibi kısa "tok" (ton kaymaz, hemen biter)
+    // Yerleştirme sesleri ise ton değil kısa vuruş ve her temanın kendi sesi var (PLACE_KIT: neon'da tok cam, okyanusta su damlası...)
     recipe(ac, name) {
       const out = ac.destination;
-      // Vuruş titreşimleri: [frekans, genlik, sönme süresi (sn)]; anında başlar, tahta gibi çabucak söner
-      const modes = (t, list) => list.forEach(([f, a, tau]) => {
-        const o = ac.createOscillator(), g = ac.createGain();
-        o.type = 'sine';
-        o.frequency.setValueAtTime(f, t);
-        g.gain.setValueAtTime(0, t);
-        g.gain.linearRampToValueAtTime(a, t + 0.0015);
-        g.gain.setTargetAtTime(0, t + 0.0015, tau);
-        o.connect(g); g.connect(out);
-        o.start(t); o.stop(t + 0.0015 + tau * 8);
-      });
-      // Çarpma anındaki çok kısa çıt: süzülmüş gürültü (her açılışta aynı), 1 ms içinde söner
-      const click = (t, amp, freq, q, tau) => {
-        const n = Math.ceil(ac.sampleRate * 0.025), b = ac.createBuffer(1, n, ac.sampleRate), d = b.getChannelData(0);
-        for (let i = 0, s = 7; i < n; i++) { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; d[i] = s / 2147483648 - 1; }
-        const src = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain();
-        src.buffer = b; f.type = 'bandpass'; f.frequency.value = freq; f.Q.value = q;
-        g.gain.setValueAtTime(amp, t); g.gain.setTargetAtTime(0, t, tau);
-        src.connect(f); f.connect(g); g.connect(out);
-        src.start(t); src.stop(t + 0.025);
-      };
+      if (name.slice(0, 5) === 'place') {
+        const [, lv, , fn] = PLACE_KIT[+name.slice(5)], g = ac.createGain();
+        g.gain.value = lv; g.connect(out);
+        fn(placeKit(ac, g));
+        return;
+      }
       // harm: bir oktav üstteki hafif üst ses (tona sıcaklık katar), tonla birlikte daha çabuk söner
       const tone = (f, dur, vol, delay, f2, harm) => {
         const t = delay || 0;
@@ -2350,10 +2509,6 @@
         });
       };
       if (name === 'pick') tone(587.33, 0.07, 0.06);                      // çok hafif "tık"
-      else if (name === 'place') {                                         // tahta "tok": çıt + kısa tahta titreşimleri
-        click(0, 0.11, 3000, 0.6, 0.0008);
-        modes(0, [[210, 0.069, 0.026], [640, 0.126, 0.018], [1460, 0.063, 0.008], [2350, 0.028, 0.0045]]);
-      }
       else if (name === 'bad') tone(261.63, 0.18, 0.2, 0, 220, 0.3);      // alçak, yumuşak "pof"
       else if (name === 'over') [659.25, 523.25, 440, 349.23].forEach((f, i) => tone(f, 0.6, 0.17, i * 0.22, 0, 0.2)); // yavaş inen notalar
       else { // clearN: N notalı yumuşak zil arpeji (do majör pentatonik)
@@ -2375,10 +2530,13 @@
       if (this.rendering) return this.rendering;
       const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
       if (!OAC) return Promise.resolve();
-      const list = [['pick', 0.13], ['place', 0.22], ['bad', 0.24], ['over', 1.36], ['clear3', 0.95], ['clear4', 0.95], ['clear5', 0.95], ['clear6', 0.95]];
-      const bufs = {};
-      this.rendering = list.reduce((pr, [name, dur]) => pr.then(() => this.renderOne(OAC, name, dur).then(b => { bufs[name] = b; })), Promise.resolve())
-        .then(() => { this.bufs = bufs; })
+      // Önce temel sesler ve ilk temanın koyma sesi, sonra diğer temaların koyma sesleri.
+      // Çizilen ses hemen çalınabilir; hepsinin bitmesi beklenmez
+      const list = [['pick', 0.13], ['place0', PLACE_KIT[0][2]], ['bad', 0.24], ['clear3', 0.95], ['clear4', 0.95], ['clear5', 0.95], ['clear6', 0.95], ['over', 1.36]]
+        .concat(PLACE_KIT.slice(1).map((p, i) => ['place' + (i + 1), p[2]]));
+      const bufs = this.bufs || {};
+      this.bufs = bufs;
+      this.rendering = list.reduce((pr, [name, dur]) => pr.then(() => (bufs[name] ? null : this.renderOne(OAC, name, dur).then(b => { bufs[name] = b; }))), Promise.resolve())
         .catch(() => { this.rendering = null; });
       return this.rendering;
     },
@@ -2397,8 +2555,12 @@
       } catch (e) { /* ses çalınamadı */ }
     },
     pick() { this.play('pick'); },
-    // Küçük parça biraz daha tiz, büyük parça biraz daha pes (±1,5 yarım ses); her seferinde azıcık farklı, tekrar ederken yormaz
-    place(cells) { this.play('place', Math.pow(2, (1.5 - (Math.min(Math.max(cells || 5, 1), 9) - 1) * 0.375 + (Math.random() - 0.5) * 0.5) / 12)); },
+    // Temanın koyma sesi (henüz çizilmediyse ilk temanınki). Küçük parça biraz daha tiz, büyük parça biraz daha pes
+    // (±1,5 yarım ses); her seferinde azıcık farklı, tekrar ederken yormaz
+    place(cells) {
+      const k = 'place' + (Math.max(0, themeIdx) % PLACE_KIT.length);
+      this.play(this.bufs && this.bufs[k] ? k : 'place0', Math.pow(2, (1.5 - (Math.min(Math.max(cells || 5, 1), 9) - 1) * 0.375 + (Math.random() - 0.5) * 0.5) / 12));
+    },
     bad() { this.play('bad'); },
     // kombo arttıkça ton biraz yükselir (en çok 5 yarım ses): tizleşip rahatsız etmez
     clear(lines, cmb) { this.play('clear' + Math.min(6, 2 + lines), Math.pow(2, Math.min(Math.max(cmb - 1, 0), 5) / 12)); },
@@ -3363,6 +3525,7 @@
         return { peak: +peak.toFixed(3), rms: +(n ? Math.sqrt(sq / n) : 0).toFixed(3), ms: Math.round((n / 44100) * 1000) };
       },
       sounds: () => (Sound.bufs ? Object.keys(Sound.bufs) : []),
+      placeKit: () => PLACE_KIT.map(p => p[0]),
       // Tutulan nokta ve parça merkezinin parmağa göre konumu (px; parça merkezi = parmak + ox, oy)
       grab: () => (drag ? { gu: drag.gu, gv: drag.gv, ox: drag.tx - drag.px, oy: drag.ty - drag.py, lift: drag.type !== 'mouse', gap: LIFT_GAP, ramp: LIFT_RAMP } : null),
       soundApi: Sound,
