@@ -30,5 +30,5 @@ Ayrıntılar: [Gizlilik Politikası ve KVKK Aydınlatma Metni](https://herophysi
 
 İnternet olmadan da oynanır: oyunu bir kez internetle açınca dosyaları cihaza kaydedilir (`sw.js`).
 iPhone'da Safari'de açıp Paylaş → Ana Ekrana Ekle ile uygulama gibi tam ekran oynayabilirsin.
-Oyunun tamamı tek dosya: `index.html` (HTML, CSS ve JavaScript). Yazı tipleri `fonts/` klasöründe
+Oyunun tamamı tek dosya: `index.html` (HTML, CSS ve JavaScript). Ana menü müziği `muzik/ana-menu.mp3`. Yazı tipleri `fonts/` klasöründe
 (Rajdhani ve Russo One, SIL Open Font License).

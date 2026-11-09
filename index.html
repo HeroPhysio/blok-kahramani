@@ -20,7 +20,7 @@
 <meta property="og:image:height" content="630">
 <meta property="og:locale" content="tr_TR">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="bk-build" content="7612df875e">
+<meta name="bk-build" content="b7642eb93b">
 <meta name="theme-color" content="#050817">
 <meta name="author" content="Baran Yavuz, Hero Uygulama Yazılım Teknolojileri Limited Şirketi">
 <meta name="color-scheme" content="dark">
@@ -377,7 +377,6 @@
     letter-spacing: .14em;
     animation: none;
   }
-  #ovStart { cursor: pointer; }
   .btn {
     appearance: none;
     -webkit-appearance: none;
@@ -591,6 +590,16 @@
   .go-week b { font: 400 19px/1 var(--display); color: var(--gold); text-shadow: 0 0 10px rgba(255, 190, 40, .45); }
   .go-week i { font-style: normal; color: #9fe9ff; }
   .go-week:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  /* Ana menü müziği: aç/kapa ve ses düzeyi */
+  .music-row { display: flex; align-items: center; gap: 10px; margin-top: 12px; padding: 7px 12px 7px 7px; border-radius: 14px; background: rgba(12, 22, 62, .72); border: 1px solid rgba(92, 160, 255, .25); }
+  .music-btn { appearance: none; -webkit-appearance: none; flex: none; display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border-radius: 10px; border: 1px solid rgba(255, 197, 49, .65); background: rgba(255, 197, 49, .13); color: var(--gold); cursor: pointer; }
+  .music-btn svg { width: 20px; height: 20px; }
+  .music-btn[aria-pressed="false"] { color: var(--muted); border-color: rgba(92, 160, 255, .32); background: transparent; }
+  .music-btn:focus-visible, .music-vol:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .music-lbl { flex: none; font: 700 12px/1 var(--ui); letter-spacing: .12em; color: var(--muted); }
+  .music-vol { flex: 1 1 auto; min-width: 0; height: 28px; margin: 0; accent-color: #ffc531; cursor: pointer; touch-action: pan-x; }
+  .music-vol:disabled { opacity: .4; cursor: default; }
+  .music-val { flex: none; min-width: 2.4em; text-align: right; font: 700 13px/1 var(--ui); color: var(--text); font-variant-numeric: tabular-nums; }
   /* Takma ad penceresi */
   .nk-err { margin: -4px 0 12px; text-align: left; font: 600 13px/1.3 var(--ui); color: #ff8fa0; }
   #ovNick { z-index: 22; } /* skor tablosu penceresinden açılınca onun üstünde */
@@ -751,6 +760,11 @@
   html.light .go-week b { color: #b87400; text-shadow: none; }
   html.light .go-week i { color: #0a74c9; }
   html.light .nk-err { color: #d4243c; }
+  html.light .music-row { background: #eef3fb; border-color: rgba(43, 120, 220, .2); }
+  html.light .music-btn { color: #b87400; background: rgba(255, 197, 49, .16); border-color: rgba(214, 150, 0, .6); }
+  html.light .music-btn[aria-pressed="false"] { color: #5b6b8c; background: transparent; border-color: rgba(43, 120, 220, .25); }
+  html.light .music-lbl { color: #5b6b8c; }
+  html.light .music-val { color: #1d2b4d; }
 
   /* Tüm süreğen animasyonlar yalnızca opaklık ve dönüşüm kullanır: GPU'da, çizim yapmadan oynar */
   @keyframes twinkle { from { opacity: .12; } to { opacity: 1; } }
@@ -875,6 +889,12 @@
     <p id="stSub" class="sub">Parçaları sürükle, satır ve sütunları patlat!</p>
     <button id="btnStart" class="btn btn-primary" type="button">OYNA</button>
     <button id="btnDuelStart" class="btn btn-ghost btn-gap btn-ico" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 19.5c.6-3.4 3-5.3 6-5.3s5.4 1.9 6 5.3"/><circle cx="17" cy="9" r="2.6"/><path d="M16.6 14.3c2.4.1 4 1.7 4.6 4.6"/></svg>İKİ KİŞİLİK</button>
+    <div id="muzikRow" class="music-row">
+      <button id="muzikBtn" class="music-btn" type="button" aria-pressed="true" aria-label="Menü müziğini kapat" title="Menü müziği"></button>
+      <label for="muzikSes" class="music-lbl">MENÜ MÜZİĞİ</label>
+      <input id="muzikSes" class="music-vol" type="range" min="0" max="100" step="5" value="70">
+      <output id="muzikDeger" class="music-val" for="muzikSes">%70</output>
+    </div>
     <p class="card-foot">Hero Uygulama Yazılım Teknolojileri Limited Şirketi<br>Kurucu: Baran Yavuz · <a href="mailto:iletisim@herouygulama.com.tr">iletisim@herouygulama.com.tr</a><br><a href="https://herouygulama.com.tr" target="_blank" rel="noopener">herouygulama.com.tr</a> · <a href="https://herophysio.github.io/blok-kahramani/gizlilik.html">Gizlilik Politikası</a></p>
   </div>
   <section id="lbStart" class="lb" aria-label="Haftanın en iyileri" hidden></section>
@@ -2407,23 +2427,30 @@
       osc.connect(f); f.connect(g); g.connect(to || dest);
       osc.start(t); osc.stop(t + 0.002 + o.tau * 8);
     };
+    // Tel çekişi (Karplus-Strong): kısa gürültü bir tel boyunda döner, her turda biraz söner ve yumuşar
+    P.pluck = (t, f, a, tau, parlak, seed, to) => {
+      const sr = ac.sampleRate, n = Math.ceil(sr * Math.min(0.3, tau * 7)), b = ac.createBuffer(1, n, sr), d = b.getChannelData(0);
+      const N = Math.max(2, Math.round(sr / f)), tel = new Float32Array(N), r = P.rng(seed || 5), kayip = Math.exp(-1 / (tau * f));
+      let onceki = 0;
+      for (let i = 0; i < N; i++) { onceki += parlak * (r() * 2 - 1 - onceki); tel[i] = onceki; }
+      for (let i = 0, j = 0; i < n; i++, j = (j + 1) % N) {
+        d[i] = tel[j] * a;
+        tel[j] = 0.5 * (tel[j] + tel[(j + 1) % N]) * kayip;
+      }
+      const son = Math.min(n, Math.round(sr * 0.025)); // son 25 ms yavaşça kısılır: kesilirken tık olmasın
+      for (let i = 0; i < son; i++) d[n - 1 - i] *= i / son;
+      const src = ac.createBufferSource();
+      src.buffer = b; src.connect(to || dest); src.start(t);
+    };
     return P;
   }
 
   // [ad, seviye, süre (sn), tarif]: sıra THEMES ile aynı. Seviyeler ölçülerek eşitlendi (place_lab)
   const PLACE_KIT = [
-    ['tok cam kırılması', 0.108, 0.3, P => {             // NEON KAHRAMAN: kalın camın tok vuruşu, ardından birkaç kısa kırık parça
-      P.noise(0, { a: 0.8, f: 2000, q: 0.7, tau: 0.001, seed: 3 });
-      P.modes(0, [[340, 1, 0.022], [880, 0.85, 0.014]]);
-      P.modes(0, [[1600, 0.28, 0.02], [2350, 0.16, 0.014]]);
-      const r = P.rng(11);
-      let t = 0.006;
-      for (let i = 0; i < 6; i++) {
-        t += 0.005 + r() * 0.01 * (1 + i * 0.2);
-        const f = 1500 + r() * 1200, a = 0.28 * Math.pow(0.78, i);
-        P.modes(t, [[f, a, 0.004 + r() * 0.005]]);
-        P.noise(t, { a: a * 0.5, f: f * 1.2, q: 1.2, tau: 0.0006, seed: 20 + i });
-      }
+    ['kalın cam', 0.157, 0.3, P => {                     // NEON KAHRAMAN: kalın bir cam bloğun tok vuruşu ve kısa, yumuşak cam tınısı
+      P.noise(0, { a: 0.35, f: 1800, q: 0.8, tau: 0.0009, seed: 3 });
+      P.modes(0, [[300, 0.5, 0.02], [720, 0.55, 0.014]]);
+      P.modes(0.002, [[1150, 0.3, 0.034], [1735, 0.18, 0.024], [2480, 0.05, 0.014]]);
     }],
     ['su damlası', 0.11, 0.3, P => {                     // OKYANUS: "blup" (yükselen kabarcık), arkasından küçük bir damla
       P.noise(0, { a: 0.2, f: 1400, q: 0.8, tau: 0.001, seed: 5 });
@@ -2479,10 +2506,10 @@
       P.noise(0, { a: 0.12, f: 2000, q: 0.8, tau: 0.0008, seed: 51 });
       P.modes(0, [[300, 0.15, 0.012], [660, 1, 0.032], [1320, 0.06, 0.016]]);
     }],
-    ['kum', 0.285, 0.3, P => {                            // ÇÖL: kuma düşen boğuk vuruş ve kum hışırtısı
-      P.modes(0, [[210, 0.3, 0.017], [450, 0.45, 0.012], [900, 0.3, 0.007]]);
-      P.noise(0, { a: 0.5, f: 1500, q: 0.9, tau: 0.02, at: 0.005, seed: 61 });
-      P.noise(0.01, { a: 0.18, f: 2300, q: 1, tau: 0.013, at: 0.003, seed: 62 });
+    ['darbuka', 0.117, 0.3, P => {                       // ÇÖL: darbukanın kenarına vurulan kısa "tek" (gergin deri, alttan hafif "düm")
+      P.noise(0, { a: 0.45, f: 2000, q: 0.8, tau: 0.0012, seed: 61 });
+      P.modes(0, [[180, 0.2, 0.02]]);
+      P.modes(0, [[520, 1, 0.026, 500, 0.03], [827, 0.5, 0.016], [1113, 0.32, 0.011], [1352, 0.18, 0.008]]);
     }],
     ['ışıltı', 0.135, 0.3, P => {                         // KUZEY IŞIKLARI: iki notalı yumuşak "ding-ding"
       P.noise(0, { a: 0.05, f: 2000, q: 0.5, tau: 0.02, at: 0.008, seed: 71 });
@@ -2543,7 +2570,7 @@
         try { this.ac = new AC(); } catch (e2) { return false; }
       }
       this.out = this.chain(this.ac);
-      this.ac.onstatechange = () => { if (this.ac.state === 'running') this.ran = true; };
+      this.ac.onstatechange = () => { if (this.ac.state === 'running') this.ran = true; if (typeof muzikGuncelle === 'function') muzikGuncelle(); };
       this.prerender();
       return true;
     },
@@ -3205,7 +3232,7 @@
   /* Başlangıç / devam ekranı: iPhone ve diğer tarayıcılar sesi yalnızca parmağı kaydırmadan yapılan bir dokunuşla
      açar; parça sürüklemek sayılmaz. Bu yüzden ses açıkken oyun tek dokunuşla başlar, ses ilk andan çalar. */
   function showStart(resume) {
-    if (duel || !soundOn || !ovOver.hidden || !ovConfirm.hidden || !ovDuel.hidden) return;
+    if (duel || !ovOver.hidden || !ovConfirm.hidden || !ovDuel.hidden) return;
     const cont = resume || moves > 0;
     $('btnStart').textContent = cont ? 'DEVAM ET' : 'OYNA';
     $('stSub').textContent = cont ? 'Kaldığın yerden devam et.' : 'Parçaları sürükle, satır ve sütunları patlat!';
@@ -3221,7 +3248,7 @@
     setModal();
     showNotice();
   }
-  ovStart.addEventListener('click', startPlay);
+  $('btnStart').addEventListener('click', startPlay);
   // iPhone sesi yalnızca gerçek bir dokunuşun içinde açar: ilk açılışta her dokunuşta dene; sonra yalnızca
   // tıklama ve tuşta (sürükleme sonrası dokunuş bitişi sesi açmaz, boşuna denemek oyunu takıltır)
   ['touchend', 'pointerup'].forEach(t => document.addEventListener(t, () => Sound.unlock(false), { passive: true, capture: true }));
@@ -3318,6 +3345,7 @@
     if (on && fromUser) { Sound.unlock(true); Sound.pick(); }
     if (!on) Sound.pause();
     if (typeof showNotice === 'function') showNotice();
+    if (typeof muzikGuncelle === 'function') muzikGuncelle();
   }
 
   btnSound.addEventListener('click', () => setSound(!soundOn, true));
@@ -4009,6 +4037,120 @@
   }, 30000);
   window.addEventListener('online', () => { if (!SKOR_API) return; bekleyenGonder('acilis'); tabloYukle(true); });
 
+  /* ================= Ana menü müziği =================
+     Menü parçası (126 BPM, 16 ölçü) ana menüde kesintisiz döner, oyuna geçince yavaşça susar. Tarayıcılar sesi ilk
+     dokunuştan önce açmaz: menüde OYNA dışında bir yere (ya da müzik düğmesine) dokununca başlar. Aç/kapa ve ses düzeyi
+     cihazda saklanır; oyunun genel sesi kapalıysa müzik de çalmaz. Parça açılışta bir kez çözülüp bellekte tutulur. */
+  const MUZIK_URL = 'muzik/ana-menu.mp3';
+  const MUZIK_B64 = '';                  // Claude kopyasında parça buraya gömülür (orada dışarıdan dosya alınamaz)
+  const MUZIK_DONGU = 1344000 / 44100;   // 64 vuruş @126 BPM = 30,476 sn
+  const MUZIK_ILK = 0.006;               // parçanın kendi içindeki ilk sesin zamanı
+  const K_MUZIK = 'blokKahramani.muzik';
+  const muzikAyar = Object.assign({ acik: true, ses: 70 }, store.get(K_MUZIK, null) || {});
+  muzikAyar.ses = clamp(Math.round(Number(muzikAyar.ses) || 0), 0, 100);
+  const Muzik = { buf: null, bas: 0, yukleniyor: null, src: null, gain: null, hedef: 0 };
+  const muzikBtn = $('muzikBtn'), muzikSes = $('muzikSes'), muzikDeger = $('muzikDeger');
+  const NOTA_ACIK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5.5l11-2V16"/><circle cx="6.5" cy="18" r="2.6" fill="currentColor"/><circle cx="17.5" cy="16" r="2.6" fill="currentColor"/></svg>';
+  const NOTA_KAPALI = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5.5l11-2V16"/><circle cx="6.5" cy="18" r="2.6"/><circle cx="17.5" cy="16" r="2.6"/><path d="M3.5 3.5l17 17"/></svg>';
+  const muzikKazanc = () => Math.pow(muzikAyar.ses / 100, 1.5);
+  const muzikIstenir = () => soundOn && muzikAyar.acik && muzikAyar.ses > 0 && !ovStart.hidden && !document.hidden && !duel;
+
+  function muzikCozumle(ab) {
+    const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    const oc = new OAC(1, 44100, 44100);
+    return new Promise((res, rej) => { const p = oc.decodeAudioData(ab, res, rej); if (p && typeof p.then === 'function') p.then(res, rej); });
+  }
+  function muzikYukle() {
+    if (Muzik.buf || Muzik.yukleniyor || !muzikAyar.acik) return;
+    const veri = MUZIK_B64
+      ? Promise.resolve().then(() => { const t = atob(MUZIK_B64), u = new Uint8Array(t.length); for (let i = 0; i < t.length; i++) u[i] = t.charCodeAt(i); return u.buffer; })
+      : fetch(MUZIK_URL).then(r => { if (!r.ok) throw new Error('müzik yok'); return r.arrayBuffer(); });
+    Muzik.yukleniyor = veri.then(muzikCozumle).then(buf => {
+      // Tarayıcı, sıkıştırılmış dosyanın başına sessizlik ekleyebilir: ilk sesi bulup döngüyü ona göre kur
+      const d = buf.getChannelData(0), sinir = Math.min(d.length, Math.round(buf.sampleRate * 0.3));
+      let i = 0;
+      while (i < sinir && Math.abs(d[i]) < 0.003) i++;
+      Muzik.bas = i < sinir ? Math.max(0, i / buf.sampleRate - MUZIK_ILK) : 0;
+      Muzik.buf = buf;
+      muzikGuncelle();
+    }).catch(() => { /* müzik yoksa menü sessiz */ }).then(() => { Muzik.yukleniyor = null; });
+  }
+  function muzikBaslat() {
+    const ac = Sound.ac;
+    if (!ac || ac.state !== 'running') return;   // ilk dokunuş bekleniyor
+    if (!Muzik.buf) { muzikYukle(); return; }
+    const t = ac.currentTime, k = muzikKazanc();
+    if (Muzik.src) {
+      // Ses düzeyi değişti: kaldığı değerden yeni düzeye kayar (zamanlanmış giriş iptal edilmez, sıçrama olmaz)
+      if (Math.abs(Muzik.hedef - k) > 1e-4) { Muzik.gain.gain.setTargetAtTime(k, t, 0.08); Muzik.hedef = k; }
+      return;
+    }
+    const g = ac.createGain(), src = ac.createBufferSource();
+    src.buffer = Muzik.buf;
+    src.loop = true;
+    src.loopStart = Muzik.bas;
+    src.loopEnd = Math.min(Muzik.buf.duration, Muzik.bas + MUZIK_DONGU);
+    g.gain.setValueAtTime(0, t);
+    g.gain.setTargetAtTime(k, t, 0.25);                 // yumuşak giriş (~0,8 sn)
+    src.connect(g);
+    g.connect(ac.destination);                          // oyun seslerinin tiz kesicisinden geçmez
+    src.start(t, Muzik.bas);
+    Muzik.src = src;
+    Muzik.gain = g;
+    Muzik.hedef = k;
+  }
+  function muzikDurdur() {
+    const src = Muzik.src, g = Muzik.gain;
+    if (!src) return;
+    Muzik.src = null;
+    Muzik.gain = null;
+    try {
+      const ac = src.context, t = ac.currentTime;
+      g.gain.setTargetAtTime(0, t, 0.12);               // yavaşça susar (kaldığı değerden)
+      src.stop(t + 0.7);
+      src.onended = () => { try { src.disconnect(); g.disconnect(); } catch (e) { /* zaten ayrık */ } };
+    } catch (e) { /* bağlam kapanmış */ }
+  }
+  function muzikGuncelle() {
+    if (Muzik.src && Muzik.src.context !== Sound.ac) { Muzik.src = null; Muzik.gain = null; } // ses bağlamı yeniden kuruldu
+    if (muzikIstenir()) muzikBaslat(); else muzikDurdur();
+  }
+  function muzikCiz() {
+    const acik = muzikAyar.acik && muzikAyar.ses > 0;
+    muzikBtn.innerHTML = acik ? NOTA_ACIK : NOTA_KAPALI;
+    muzikBtn.setAttribute('aria-pressed', String(acik));
+    muzikBtn.setAttribute('aria-label', acik ? 'Menü müziğini kapat' : 'Menü müziğini aç');
+    muzikSes.value = String(muzikAyar.ses);
+    muzikSes.disabled = !muzikAyar.acik;
+    muzikSes.setAttribute('aria-valuetext', '%' + muzikAyar.ses);
+    muzikDeger.textContent = '%' + muzikAyar.ses;
+  }
+  function muzikKaydet() {
+    store.set(K_MUZIK, muzikAyar);
+    muzikCiz();
+    if (muzikAyar.acik) muzikYukle();
+    muzikGuncelle();
+  }
+  muzikBtn.addEventListener('click', () => {
+    muzikAyar.acik = !(muzikAyar.acik && muzikAyar.ses > 0);
+    if (muzikAyar.acik && muzikAyar.ses === 0) muzikAyar.ses = 70;
+    if (muzikAyar.acik && !soundOn) setSound(true, true); // müziği açan, sesi de duymak ister
+    Sound.unlock(true);
+    muzikKaydet();
+    announce(muzikAyar.acik ? 'Menü müziği açık' : 'Menü müziği kapalı');
+  });
+  muzikSes.addEventListener('input', () => {
+    muzikAyar.ses = clamp(Math.round(Number(muzikSes.value) || 0), 0, 100);
+    Sound.unlock(true);
+    muzikKaydet();
+  });
+  // Menü açılıp kapanınca (hangi yoldan olursa olsun) müzik başlar ya da susar
+  if (typeof MutationObserver === 'function') new MutationObserver(muzikGuncelle).observe(ovStart, { attributes: true, attributeFilter: ['hidden'] });
+  document.addEventListener('visibilitychange', muzikGuncelle);
+  // Menüde OYNA dışındaki bir dokunuş sesi açar (belge dinleyicisi) ve müziği başlatır
+  ovStart.addEventListener('click', () => setTimeout(muzikGuncelle, 0));
+  muzikCiz();
+
   /* ================= Boyut değişimi ================= */
   let resizeRaf = 0;
   function onResize() {
@@ -4070,6 +4212,8 @@
       setMode: m => applyMode(m === 'light', true),
       clearInfo: arr => { const ci = clearInfoOn(Int8Array.from(arr)); return { one: ci.one.map(q => q.id), multi: ci.multi.map(q => q.id), perfect: ci.perfect.map(q => q.id), top: ci.top }; },
       // Haftalık skor tablosu
+      muzik: () => ({ ayar: Object.assign({}, muzikAyar), yuklendi: !!Muzik.buf, caliyor: !!Muzik.src, kazanc: Muzik.gain ? Muzik.gain.gain.value : 0,
+        bas: Muzik.bas, dongu: Muzik.src ? Muzik.src.loopEnd - Muzik.src.loopStart : 0, sure: Muzik.buf ? Muzik.buf.duration : 0, ac: Sound.ac ? Sound.ac.state : 'yok' }),
       skor: () => ({ api: SKOR_API, oyuncu: Object.assign({}, oyuncu), tablo: Skor.tablo, durum: Skor.durum, sonuc: Skor.sonuc, bekleyen: store.get(K_BEKLEYEN, null), gonderiyor: Skor.gonderiyor }),
       skorGonder: (p, m, n) => skorGonder(p, m, n || 'bitti'),
       tabloYukle: () => tabloYukle(true),
@@ -4103,6 +4247,7 @@
     if (SKOR_API && !oyuncu.ad && !oyuncu.atla) adSor(() => showStart(false));
     else showStart(false);
     if (SKOR_API) { bekleyenGonder('acilis'); tabloYukle(true); }
+    muzikYukle();
     wake();
   }
   if (hot && typeof hot.ready === 'function') {
