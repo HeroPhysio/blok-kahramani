@@ -20,7 +20,7 @@
 <meta property="og:image:height" content="630">
 <meta property="og:locale" content="tr_TR">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="bk-build" content="a99a8f48b3">
+<meta name="bk-build" content="a24d229c23">
 <meta name="theme-color" content="#050817">
 <meta name="author" content="Baran Yavuz, Hero Uygulama Yazılım Teknolojileri Limited Şirketi">
 <meta name="color-scheme" content="dark">
@@ -1901,7 +1901,7 @@
     for (const i of idx) { board[i] = p.color; pops.push({ i, t0: now, s: 1, fl: 0 }); }
     moves++;
     addScore(p.cells.length); // yerleştirilen her kare +1
-    Sound.place();
+    Sound.place(p.cells.length);
     const ln = fullLines();
     if (ln.rows.length || ln.cols.length) {
       doClear(ln.rows, ln.cols, p, r0, c0, now);
@@ -2308,9 +2308,31 @@
       if (this.stall >= 2 && !this.dead) { this.dead = true; showNotice(); }
     },
     // Ses tarifleri: düğümleri verilen (çevrimdışı) bağlama kurar; açılışta bir kez çizilir.
-    // Hepsi yumuşak sinüs tonlar: yavaşça açılır, zil ya da marimba gibi kendiliğinden söner; hışırtı ve sert dalga yok.
+    // Tonlar yumuşak sinüs: yavaşça açılır, zil ya da marimba gibi kendiliğinden söner; hışırtı ve sert dalga yok.
+    // Yerleştirme sesi ise ton değil vuruş: tahta bir taşın tahtaya konması gibi kısa "tok" (ton kaymaz, hemen biter)
     recipe(ac, name) {
       const out = ac.destination;
+      // Vuruş titreşimleri: [frekans, genlik, sönme süresi (sn)]; anında başlar, tahta gibi çabucak söner
+      const modes = (t, list) => list.forEach(([f, a, tau]) => {
+        const o = ac.createOscillator(), g = ac.createGain();
+        o.type = 'sine';
+        o.frequency.setValueAtTime(f, t);
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(a, t + 0.0015);
+        g.gain.setTargetAtTime(0, t + 0.0015, tau);
+        o.connect(g); g.connect(out);
+        o.start(t); o.stop(t + 0.0015 + tau * 8);
+      });
+      // Çarpma anındaki çok kısa çıt: süzülmüş gürültü (her açılışta aynı), 1 ms içinde söner
+      const click = (t, amp, freq, q, tau) => {
+        const n = Math.ceil(ac.sampleRate * 0.025), b = ac.createBuffer(1, n, ac.sampleRate), d = b.getChannelData(0);
+        for (let i = 0, s = 7; i < n; i++) { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; d[i] = s / 2147483648 - 1; }
+        const src = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain();
+        src.buffer = b; f.type = 'bandpass'; f.frequency.value = freq; f.Q.value = q;
+        g.gain.setValueAtTime(amp, t); g.gain.setTargetAtTime(0, t, tau);
+        src.connect(f); f.connect(g); g.connect(out);
+        src.start(t); src.stop(t + 0.025);
+      };
       // harm: bir oktav üstteki hafif üst ses (tona sıcaklık katar), tonla birlikte daha çabuk söner
       const tone = (f, dur, vol, delay, f2, harm) => {
         const t = delay || 0;
@@ -2328,7 +2350,10 @@
         });
       };
       if (name === 'pick') tone(587.33, 0.07, 0.06);                      // çok hafif "tık"
-      else if (name === 'place') tone(493.88, 0.16, 0.3, 0, 392, 0.25);  // yumuşak "tok"
+      else if (name === 'place') {                                         // tahta "tok": çıt + kısa tahta titreşimleri
+        click(0, 0.11, 3000, 0.6, 0.0008);
+        modes(0, [[210, 0.069, 0.026], [640, 0.126, 0.018], [1460, 0.063, 0.008], [2350, 0.028, 0.0045]]);
+      }
       else if (name === 'bad') tone(261.63, 0.18, 0.2, 0, 220, 0.3);      // alçak, yumuşak "pof"
       else if (name === 'over') [659.25, 523.25, 440, 349.23].forEach((f, i) => tone(f, 0.6, 0.17, i * 0.22, 0, 0.2)); // yavaş inen notalar
       else { // clearN: N notalı yumuşak zil arpeji (do majör pentatonik)
@@ -2372,7 +2397,8 @@
       } catch (e) { /* ses çalınamadı */ }
     },
     pick() { this.play('pick'); },
-    place() { this.play('place'); },
+    // Küçük parça biraz daha tiz, büyük parça biraz daha pes (±1,5 yarım ses); her seferinde azıcık farklı, tekrar ederken yormaz
+    place(cells) { this.play('place', Math.pow(2, (1.5 - (Math.min(Math.max(cells || 5, 1), 9) - 1) * 0.375 + (Math.random() - 0.5) * 0.5) / 12)); },
     bad() { this.play('bad'); },
     // kombo arttıkça ton biraz yükselir (en çok 5 yarım ses): tizleşip rahatsız etmez
     clear(lines, cmb) { this.play('clear' + Math.min(6, 2 + lines), Math.pow(2, Math.min(Math.max(cmb - 1, 0), 5) / 12)); },
@@ -3320,17 +3346,18 @@
       check: () => { if (!tray.some(p => p && p.fits)) triggerGameOver(); },
       setScore: n => { score = n; displayScore = n; if (score > best) setBest(score); setScoreText(score); updateHud(); queueTheme(0); },
       audio: () => ({ state: Sound.ac ? Sound.ac.state : 'none', session: navigator.audioSession ? navigator.audioSession.type : 'yok' }),
-      // Hazır sesi ana çıkıştan (sıkıştırıcı dahil) çevrimdışı geçirip tepe ve ortalama seviyesini döndürür
+      // Hazır sesi ana çıkıştan (sıkıştırıcı dahil) çevrimdışı geçirip tepe ve ortalama seviyesini döndürür.
+      // Oyundaki gibi ölçülür: sıkıştırıcı önce 1 sn sessizlikte oturur (ilk anda sesi kısık gösterir), ses sonra çalar
       renderSound: async (name, a, b) => {
         await Sound.prerender();
         const key = name === 'clear' ? 'clear' + Math.min(6, 2 + a) : name;
         const rate = name === 'clear' ? Math.pow(2, Math.min(Math.max(b - 1, 0), 5) / 12) : 1;
-        const ac = new OfflineAudioContext(1, Math.round(44100 * 1.6), 44100), src = ac.createBufferSource();
+        const ac = new OfflineAudioContext(1, Math.round(44100 * 2.6), 44100), src = ac.createBufferSource();
         src.buffer = Sound.bufs[key];
         src.playbackRate.value = rate;
         src.connect(Sound.chain(ac));
-        src.start(0);
-        const d = (await ac.startRendering()).getChannelData(0);
+        src.start(1);
+        const d = (await ac.startRendering()).getChannelData(0).subarray(44100);
         let peak = 0, sq = 0, n = 0;
         for (let i = 0; i < d.length; i++) { const v = Math.abs(d[i]); if (v > peak) peak = v; if (v > 0.001) { sq += v * v; n++; } }
         return { peak: +peak.toFixed(3), rms: +(n ? Math.sqrt(sq / n) : 0).toFixed(3), ms: Math.round((n / 44100) * 1000) };
