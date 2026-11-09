@@ -20,7 +20,7 @@
 <meta property="og:image:height" content="630">
 <meta property="og:locale" content="tr_TR">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="bk-build" content="56d78ab28d">
+<meta name="bk-build" content="fa5288e1e9">
 <meta name="theme-color" content="#050817">
 <meta name="author" content="Baran Yavuz, Hero Uygulama Yazılım Teknolojileri Limited Şirketi">
 <meta name="color-scheme" content="dark">
@@ -39,6 +39,7 @@
   @font-face { font-family: 'Russo One'; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/russo-one-400-latin-ext.woff2) format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF; }
   @font-face { font-family: 'Russo One'; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/russo-one-400-latin.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
 </style>
+<script>try { if (localStorage.getItem('blokKahramani.mod') === '"light"') document.documentElement.classList.add('light'); } catch (e) {}</script>
 <style>
   /* Yerleşim: dikey ekranda tek sütun (HUD → 8x8 tahta → 3'lü raf), yatay ekranda tahta solda, HUD + raf sağda.
      Akıcılık için katmanlı çizim:
@@ -563,6 +564,58 @@
   .nojs strong { color: #fff; }
   .nojs .nojs-foot { margin: 18px 0 0; font-size: 14px; color: #8ea6d8; }
 
+
+  /* ================= Aydınlık mod ================= */
+  /* Bloklar aynı renklerde kalır; zemin, tahta, raf, üst bilgi ve kartlar açık tonlara geçer */
+  html.light { --bg: #eef3fb; --text: #14213d; --muted: #5b6b8c; --line: rgba(40, 90, 180, .25); color-scheme: light; }
+  html.light, html.light body { background: #eef3fb; }
+  html.light #twinkle { display: none; }
+  html.light #flash { background: radial-gradient(70% 55% at 50% 45%, rgba(255, 214, 110, .4), rgba(255, 214, 110, .1) 55%, rgba(255, 214, 110, 0) 80%); }
+  html.light .hud-title { color: #c47f00; text-shadow: 0 1px 0 rgba(255, 255, 255, .85), 0 0 .5em rgba(255, 190, 60, .35); }
+  html.light .hud-title svg, html.light .hud-label svg, html.light .pl-name svg { fill: #e39b00; filter: drop-shadow(0 0 .12em rgba(255, 170, 30, .45)); }
+  html.light .hud-score { color: #13224f; text-shadow: 0 2px 0 rgba(255, 255, 255, .9), 0 0 .3em rgba(43, 140, 255, .3); }
+  html.light #hudBest { color: #b87400; text-shadow: none; }
+  html.light .hud-combo .hud-label { color: #8a97b5; }
+  html.light .hud-combo.on .hud-label { color: #0f8fb0; }
+  html.light #hudCombo { color: #a3aec8; }
+  html.light .hud-combo.on #hudCombo { color: #0aa2c8; text-shadow: 0 0 .3em rgba(10, 180, 220, .35); }
+  html.light .pips i { border-color: rgba(90, 110, 160, .45); }
+  html.light .pips i.on { background: #f0a800; border-color: #f0a800; box-shadow: 0 0 5px rgba(240, 168, 0, .6); }
+  html.light .hud-best.urgent #hudBest { color: #e0263c; text-shadow: none; }
+  html.light .icon-btn { background: linear-gradient(180deg, rgba(255, 255, 255, .96), rgba(232, 240, 252, .96)); color: #1d3a78; border-color: rgba(40, 90, 180, .25); box-shadow: 0 4px 12px rgba(30, 60, 120, .12), inset 0 1px 0 rgba(255, 255, 255, .9); }
+  html.light .icon-btn:hover { color: #0b2a66; border-color: rgba(43, 140, 255, .55); }
+  html.light #hint b { color: #1d3a78; text-shadow: 0 0 .4em rgba(255, 255, 255, .95); }
+  html.light #hint span { color: #4b5d84; }
+  html.light #notice { background: rgba(255, 255, 255, .95); color: #1d2b4d; box-shadow: 0 6px 18px rgba(30, 60, 120, .16); }
+  html.light #duelBar { background: rgba(255, 255, 255, .95); border-color: rgba(43, 120, 220, .35); color: #4b5d84; box-shadow: 0 6px 18px rgba(30, 60, 120, .12); }
+  html.light #duelBar b { color: #b87400; }
+  html.light #duelBar.ahead { border-color: rgba(20, 170, 90, .7); color: #0f7a45; box-shadow: 0 0 14px rgba(20, 170, 90, .25); }
+  html.light #duelBar.ahead b { color: #0b9a52; }
+  html.light .float-praise { color: #ffb000; text-shadow: 0 .06em 0 #8a4200, 0 0 .08em rgba(60, 30, 0, .9), 0 0 .3em rgba(255, 255, 255, .95), 0 0 .7em rgba(255, 170, 30, .45); }
+  html.light .float-combo { color: #12b8e0; text-shadow: 0 .06em 0 #0b3a80, 0 0 .08em rgba(4, 30, 70, .9), 0 0 .3em rgba(255, 255, 255, .95), 0 0 .7em rgba(43, 180, 255, .4); }
+  html.light .float-pts { color: #13224f; text-shadow: 0 .05em 0 rgba(255, 255, 255, .9), 0 0 .3em rgba(255, 255, 255, .95); }
+  html.light .float-theme { color: #13224f; text-shadow: 0 0 .3em rgba(255, 255, 255, .95), 0 0 .8em var(--accent, rgba(255, 197, 49, .6)); }
+  html.light .float-count { color: #13224f; text-shadow: 0 .05em 0 rgba(255, 255, 255, .9), 0 0 .3em rgba(255, 255, 255, .95), 0 0 .8em var(--accent, rgba(43, 140, 255, .5)); }
+  html.light .overlay { background: radial-gradient(80% 60% at 50% 42%, rgba(235, 242, 255, .5), rgba(196, 210, 238, .78)); }
+  html.light .card { background: linear-gradient(180deg, #ffffff, #f2f6fd); border-color: rgba(43, 120, 220, .25); box-shadow: 0 24px 60px rgba(20, 40, 90, .25), inset 0 0 0 1px rgba(255, 255, 255, .6); }
+  html.light .title { color: #c47f00; text-shadow: 0 1px 0 #fff, 0 0 18px rgba(255, 190, 60, .3); }
+  html.light .sub, html.light .duel-note, html.light .card-foot, html.light .stat span, html.light .pl-stat, html.light .duel-target span { color: #5b6b8c; }
+  html.light .label, html.light .field > label, html.light .field > .flabel, html.light .link-btn { color: #2b6fd6; }
+  html.light .big-score, html.light .pl-score { color: #13224f; text-shadow: 0 0 18px rgba(43, 140, 255, .22); }
+  html.light .stat, html.light .pl, html.light .duel-target { background: #eef3fb; border-color: rgba(43, 120, 220, .18); }
+  html.light .stat b, html.light .duel-target b, html.light .pl.win .pl-score { color: #b87400; text-shadow: none; }
+  html.light .pl.win { box-shadow: 0 0 16px rgba(240, 168, 0, .25); }
+  html.light .duel-target i, html.light .pl-name { color: #1d2b4d; }
+  html.light .series { color: #0f8fb0; }
+  html.light .badge.badge-beta, html.light #credits .cr-beta { color: #a86a00; border-color: rgba(200, 140, 0, .7); box-shadow: none; }
+  html.light .btn-ghost { color: #1d2b4d; background: #e8eef8; box-shadow: inset 0 0 0 1px rgba(43, 120, 220, .22); }
+  html.light .field input { background: #ffffff; color: #13224f; border-color: rgba(43, 120, 220, .3); }
+  html.light .field input::placeholder { color: rgba(90, 110, 150, .55); }
+  html.light .seg button { background: #eef3fb; color: #4b5d84; border-color: rgba(43, 120, 220, .22); }
+  html.light #credits { color: rgba(60, 76, 110, .85); }
+  html.light #credits b { color: #1d2b4d; }
+  html.light #credits a, html.light .card-foot a { color: #0a74c9; }
+
   /* Tüm süreğen animasyonlar yalnızca opaklık ve dönüşüm kullanır: GPU'da, çizim yapmadan oynar */
   @keyframes twinkle { from { opacity: .12; } to { opacity: 1; } }
   @keyframes ringPulse { from { opacity: .6; } to { opacity: 1; } }
@@ -652,6 +705,7 @@
 </button>
 <button id="btnSound" class="icon-btn" type="button" aria-label="Sesi kapat" title="Sesi kapat"></button>
 <button id="btnDuel" class="icon-btn" type="button" aria-label="İki kişilik oyna" title="İki kişilik oyna"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 19.5c.6-3.4 3-5.3 6-5.3s5.4 1.9 6 5.3"/><circle cx="17" cy="9" r="2.6"/><path d="M16.6 14.3c2.4.1 4 1.7 4.6 4.6"/></svg></button>
+<button id="btnMode" class="icon-btn" type="button" aria-label="Aydınlık moda geç" title="Aydınlık moda geç"></button>
 <div id="duelBar" aria-hidden="true" hidden></div>
 
 <div id="insetProbe" aria-hidden="true"></div>
@@ -754,6 +808,7 @@
     { rgb: '110,112,255', light: '#d3d4ff', base: '#6e70ff', dark: '#29269c', face1: '#9496ff', face2: '#5254ea', rim: 'rgba(224,225,255,.95)', spark: '#b3b4ff' }
   ];
   const GREY  = { rgb: '120,135,170', light: '#6c7795', base: '#3b4566', dark: '#1a2137', face1: '#4a5577', face2: '#323b5a', rim: 'rgba(150,166,205,.35)', spark: '#8090b0', noGlow: true, gloss: 0.14 };
+  const GREY_L = { rgb: '150,160,185', light: '#d3d9e6', base: '#a4adc2', dark: '#7d879e', face1: '#bcc4d4', face2: '#98a2b8', rim: 'rgba(255,255,255,.55)', spark: '#c4cbda', noGlow: true, gloss: 0.3 };
   const WHITE = { rgb: '220,240,255', light: '#ffffff', base: '#ffffff', dark: '#dcefff', face1: '#ffffff', face2: '#eaf6ff', rim: '#ffffff', spark: '#ffffff' };
 
 
@@ -892,12 +947,37 @@
   const PALETTE0 = PALETTE.slice();
   THEMES.forEach(t => { t.palette = t.blocks ? t.blocks.map(deriveColor) : PALETTE0; });
   const themeFor = sc => Math.floor(sc / THEME_STEP) % THEMES.length;
+
+  // Aydınlık mod: her temanın açık eşi, temanın ana renginden türetilir. Bloklar aynı kalır;
+  // zemin, tahta, boş kareler ve raf açık tonlara, köşe braketleri ve çerçeve koyu tonlara geçer.
+  function lightTheme(T) {
+    const hsl = rgb => rgbToHsl.apply(null, rgb.split(',').map(Number));
+    const [h, s] = hsl(T.halo);
+    const H = (l, sMax) => hslHex(h, Math.min(s, sMax), l);
+    const rgbOf = hex => hexRgb(hex).join(',');
+    const deep = rgb => { const c = hsl(rgb); return rgbOf(hslHex(c[0], c[1], Math.min(c[2], 0.5))); };
+    const bk = rgbToHsl.apply(null, hexRgb(T.bracket));
+    return Object.assign({}, T, {
+      light: true,
+      bg: Object.assign({}, T.bg, { base: H(0.94, 0.6), top: H(0.968, 0.55), bottom: H(0.9, 0.5) }),
+      glowA: [0.22, 0.16, 0.1, 0.1], haloA: 0.3,
+      fill: H(0.985, 0.4), panel: [H(0.975, 0.5), H(0.93, 0.45)],
+      frame: T.frame.map(deep),
+      cell: [[H(0.9, 0.42), H(0.862, 0.4)], [H(0.884, 0.42), H(0.846, 0.4)]],
+      cellLine: rgbOf(H(0.4, 0.5)), cellLineA: 0.16,
+      bracket: hslHex(bk[0], bk[1], Math.min(bk[2], 0.5)), bracketA: 0.35,
+      tray: [rgbOf(H(0.99, 0.4)), rgbOf(H(0.945, 0.45))], trayA: [0.92, 0.78], trayLine: rgbOf(H(0.45, 0.5)), trayLineA: [0.24, 0.16]
+    });
+  }
+  const THEMES_LIGHT = THEMES.map(lightTheme);
+  const TH = k => (LIGHT ? THEMES_LIGHT : THEMES)[k];
+
   function themeCss(t) {
-    const b = t.bg;
-    return 'radial-gradient(120% 65% at 50% -12%, rgba(' + b.glowTop + ',.30), transparent 62%),' +
-      'radial-gradient(90% 45% at 50% 112%, rgba(' + b.glowBottom + ',.13), transparent 62%),' +
-      'radial-gradient(55% 40% at -5% 55%, rgba(' + b.glowL + ',.08), transparent 70%),' +
-      'radial-gradient(55% 40% at 105% 45%, rgba(' + b.glowR + ',.08), transparent 70%),' +
+    const b = t.bg, A = t.glowA || [0.3, 0.13, 0.08, 0.08];
+    return 'radial-gradient(120% 65% at 50% -12%, rgba(' + b.glowTop + ',' + A[0] + '), transparent 62%),' +
+      'radial-gradient(90% 45% at 50% 112%, rgba(' + b.glowBottom + ',' + A[1] + '), transparent 62%),' +
+      'radial-gradient(55% 40% at -5% 55%, rgba(' + b.glowL + ',' + A[2] + '), transparent 70%),' +
+      'radial-gradient(55% 40% at 105% 45%, rgba(' + b.glowR + ',' + A[3] + '), transparent 70%),' +
       'linear-gradient(180deg, ' + b.top + ' 0%, ' + b.base + ' 55%, ' + b.bottom + ' 100%) ' + b.base;
   }
 
@@ -983,6 +1063,9 @@
   const K_BEST = 'blokKahramani.rekor.v2';
   const K_SAVE = 'blokKahramani.kayit.v2';
   const K_SOUND = 'blokKahramani.ses';
+  const K_MODE = 'blokKahramani.mod'; // aydınlık / karanlık mod seçimi (varsayılan karanlık)
+  let LIGHT = store.get(K_MODE, 'dark') === 'light';
+  document.documentElement.classList.toggle('light', LIGHT);
 
   /* ================= DOM ================= */
   const cvBg = $('bg'), cvCells = $('cells'), cvHl = $('hl'), cvTray = $('trayCv'), canvas = $('game'), dragEl = $('dragEl');
@@ -1013,6 +1096,7 @@
   const metaTheme = document.querySelector('meta[name="theme-color"]');
   const btnRestart = $('btnRestart');
   const btnSound = $('btnSound');
+  const btnMode = $('btnMode');
   const ovOver = $('ovOver');
   const ovConfirm = $('ovConfirm');
   const ovStart = $('ovStart');
@@ -1198,6 +1282,7 @@
     placeBtn(btnRestart, h.x, R.a - bsz / 2, bsz);
     placeBtn(btnSound, h.x + h.w - bsz, R.a - bsz / 2, bsz);
     placeBtn(btnDuel, h.x + bsz + Math.round(bsz * 0.22), R.a - bsz / 2, bsz);
+    placeBtn(btnMode, h.x + h.w - 2 * bsz - Math.round(bsz * 0.22), R.a - bsz / 2, bsz);
     placeDuelBar();
     const o = L.fp + Math.max(3, L.cs * 0.08), sz = L.bs + o * 2, ws = ringWrap.style;
     ws.left = (L.bx - o) + 'px';
@@ -1226,10 +1311,16 @@
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     const gap = Math.max(1, cs * 0.05);
     const x = pad + gap, y = pad + gap, s = cs - gap * 2, r = s * 0.2;
-    if (!col.noGlow) { // neon parıltı
+    if (!col.noGlow) { // neon parıltı (aydınlık modda yumuşak renkli gölge)
       g.save();
-      g.shadowColor = 'rgba(' + col.rgb + ',0.95)';
-      g.shadowBlur = cs * 0.38 * dpr;
+      if (LIGHT) {
+        g.shadowColor = 'rgba(' + col.rgb + ',0.5)';
+        g.shadowBlur = cs * 0.16 * dpr;
+        g.shadowOffsetY = cs * 0.05 * dpr;
+      } else {
+        g.shadowColor = 'rgba(' + col.rgb + ',0.95)';
+        g.shadowBlur = cs * 0.38 * dpr;
+      }
       g.fillStyle = col.base;
       rr(g, x, y, s, s, r); g.fill();
       g.restore();
@@ -1266,16 +1357,16 @@
     if (greySprite) freeCanvas(greySprite.cv);
     if (whiteSprite) freeCanvas(whiteSprite.cv);
     sprites = PALETTE.map(makeSprite);
-    greySprite = makeSprite(GREY);
+    greySprite = makeSprite(LIGHT ? GREY_L : GREY);
     whiteSprite = makeSprite(WHITE);
   }
 
   // Sabit arka katman: yıldızlar, tahta çerçevesi, boş hücreler, altın köşeler, raf paneli
   function drawBg() {
-    const g = bctx, { cs, bs, fp, dpr } = L, T = THEMES[Math.max(0, themeIdx)];
+    const g = bctx, { cs, bs, fp, dpr } = L, T = TH(Math.max(0, themeIdx));
     g.clearRect(0, 0, L.W, L.H);
-    // yıldızlar (üst bilgi alanına düşenler atlanır)
-    const n = Math.round(clamp((L.W * L.H) / 9000, 40, 140)), hd = L.hud;
+    // yıldızlar (üst bilgi alanına düşenler atlanır; aydınlık modda yıldız yok)
+    const n = T.light ? 0 : Math.round(clamp((L.W * L.H) / 9000, 40, 140)), hd = L.hud;
     for (let i = 0; i < n; i++) {
       const x = Math.random() * L.W, y = Math.random() * L.H;
       if (x > hd.x - 4 && x < hd.x + hd.w + 4 && y > hd.y - 4 && y < hd.y + hd.h + 4) continue;
@@ -1289,7 +1380,7 @@
     const x0 = L.bx - fp, y0 = L.by - fp, outer = bs + 2 * fp, R = fp * 1.5;
     // dış mavi hale
     g.save();
-    g.shadowColor = 'rgba(' + T.halo + ',0.55)';
+    g.shadowColor = 'rgba(' + T.halo + ',' + (T.haloA || 0.55) + ')';
     g.shadowBlur = cs * 0.8 * dpr;
     g.fillStyle = T.fill;
     rr(g, x0, y0, outer, outer, R); g.fill();
@@ -1316,7 +1407,7 @@
         gr.addColorStop(0, T.cell[alt][0]);
         gr.addColorStop(1, T.cell[alt][1]);
         g.fillStyle = gr; rr(g, x, y, s, s, cr); g.fill();
-        g.lineWidth = 1; g.strokeStyle = 'rgba(' + T.cellLine + ',0.10)';
+        g.lineWidth = 1; g.strokeStyle = 'rgba(' + T.cellLine + ',' + (T.cellLineA || 0.1) + ')';
         rr(g, x + 0.5, y + 0.5, s - 1, s - 1, cr); g.stroke();
       }
     }
@@ -1326,7 +1417,7 @@
     g.strokeStyle = T.bracket;
     g.lineWidth = Math.max(2, cs * 0.065);
     g.lineCap = 'round';
-    g.shadowColor = rgbaOf(T.bracket, 0.9);
+    g.shadowColor = rgbaOf(T.bracket, T.bracketA || 0.9);
     g.shadowBlur = cs * 0.3 * dpr;
     const xa = x0 - off, ya = y0 - off, xb = x0 + outer + off, yb = y0 + outer + off;
     const corner = (cx, cy, dx, dy) => {
@@ -1342,14 +1433,15 @@
     const t = L.tray;
     rr(g, t.x, t.y, t.w, t.h, cs * 0.45);
     gr = g.createLinearGradient(0, t.y, 0, t.y + t.h);
-    gr.addColorStop(0, 'rgba(' + T.tray[0] + ',0.42)');
-    gr.addColorStop(1, 'rgba(' + T.tray[1] + ',0.25)');
+    const tA = T.trayA || [0.42, 0.25], tL = T.trayLineA || [0.14, 0.08];
+    gr.addColorStop(0, 'rgba(' + T.tray[0] + ',' + tA[0] + ')');
+    gr.addColorStop(1, 'rgba(' + T.tray[1] + ',' + tA[1] + ')');
     g.fillStyle = gr;
     g.fill();
-    g.strokeStyle = 'rgba(' + T.trayLine + ',0.14)';
+    g.strokeStyle = 'rgba(' + T.trayLine + ',' + tL[0] + ')';
     g.lineWidth = 1;
     g.stroke();
-    g.strokeStyle = 'rgba(' + T.trayLine + ',0.08)';
+    g.strokeStyle = 'rgba(' + T.trayLine + ',' + tL[1] + ')';
     for (let i = 1; i < 3; i++) {
       const x = Math.round(t.x + L.slotW * i) + 0.5;
       g.beginPath(); g.moveTo(x, t.y + t.h * 0.2); g.lineTo(x, t.y + t.h * 0.8); g.stroke();
@@ -1824,7 +1916,7 @@
   function setTheme(k, animated) {
     if (k === themeIdx) return;
     themeIdx = k;
-    const T = THEMES[k], anim = animated && !REDUCED;
+    const T = TH(k), anim = animated && !REDUCED;
     for (let i = 0; i < PALETTE.length; i++) PALETTE[i] = T.palette[i];
     const layer = document.createElement('div');
     layer.className = 'tb';
@@ -2414,7 +2506,7 @@
   function drawBeams(now) {
     if (!beams.length) return;
     const { bx, by, cs, bs, fp } = L;
-    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalCompositeOperation = LIGHT ? 'source-over' : 'lighter';
     let k = 0;
     for (let j = 0; j < beams.length; j++) {
       const b = beams[j], p = (now - b.t0) / b.dur;
@@ -2447,7 +2539,8 @@
     const col = PALETTE[colorIdx], k = L.cs / 44;
     for (let i = 0; i < n; i++) {
       const ang = rand(0, Math.PI * 2), sp = rand(70, 280) * k;
-      particles.push({ x, y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp - 110 * k, life: 0, max: rand(0.4, 0.75), size: rand(0.07, 0.17) * L.cs, color: Math.random() < 0.25 ? '#ffffff' : col.spark });
+      const pc = LIGHT ? (Math.random() < 0.25 ? col.dark : col.base) : Math.random() < 0.25 ? '#ffffff' : col.spark;
+      particles.push({ x, y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp - 110 * k, life: 0, max: rand(0.4, 0.75), size: rand(0.07, 0.17) * L.cs, color: pc });
     }
     if (particles.length > 360) particles.splice(0, particles.length - 360);
   }
@@ -2481,7 +2574,7 @@
       const s = p.size * (1 - t * 0.6);
       b.path.rect(p.x - s / 2, p.y - s / 2, s, s);
     }
-    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalCompositeOperation = LIGHT ? 'source-over' : 'lighter';
     buckets.forEach(b => { ctx.globalAlpha = b.a; ctx.fillStyle = b.color; ctx.fill(b.path); });
     ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = 'source-over';
@@ -2807,6 +2900,34 @@
   const ICON_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z" fill="currentColor" fill-opacity=".22"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
   const ICON_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z" fill="currentColor" fill-opacity=".22"/><path d="m16 9 5 6"/><path d="m21 9-5 6"/></svg>';
 
+  /* Aydınlık / karanlık mod: düğme ikisi arasında geçiş yapar, seçim hatırlanır */
+  const ICON_SUN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2" fill="currentColor" fill-opacity=".22"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg>';
+  const ICON_MOON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.6A8.2 8.2 0 0 1 9.4 4a8.2 8.2 0 1 0 10.6 10.6z" fill="currentColor" fill-opacity=".22"/></svg>';
+  function setModeButton() {
+    btnMode.innerHTML = LIGHT ? ICON_MOON : ICON_SUN;
+    const lbl = LIGHT ? 'Karanlık moda geç' : 'Aydınlık moda geç';
+    btnMode.setAttribute('aria-label', lbl);
+    btnMode.title = lbl;
+  }
+  function applyMode(light, save) {
+    if (save) store.set(K_MODE, light ? 'light' : 'dark');
+    if (light === LIGHT) return;
+    LIGHT = light;
+    document.documentElement.classList.toggle('light', LIGHT);
+    setModeButton();
+    const k = Math.max(0, themeIdx);
+    themeIdx = -1;
+    setTheme(k, false); // tema açık ya da koyu eşiyle yeniden çizilir
+    if (sprites.length) {
+      buildSprites();
+      if (drag) prepareDragEl(drag.piece);
+      cellsDirty = true; trayDirty = true; fxDirty = true; previewKey = ''; previewDirty = true;
+      wake();
+    }
+  }
+  setModeButton();
+  btnMode.addEventListener('click', () => { applyMode(!LIGHT, true); announce(LIGHT ? 'Aydınlık mod' : 'Karanlık mod'); });
+
   function setSound(on, fromUser) {
     soundOn = on;
     store.set(K_SOUND, on);
@@ -2928,6 +3049,7 @@
     duel = { names, secs: duelPrefs.secs, order: [0, 1], turn: 0, results: [], wins: [0, 0], seed: newSeed(), phase: 'ready', left: duelPrefs.secs * 1000, endsAt: 0 };
     hudBestLabel.innerHTML = CLOCK_LABEL;
     btnDuel.hidden = true;
+    btnMode.hidden = true; // düelloda başlıktaki oyuncu adına yer kalsın
     bestText = '';
     prepareTurn();
     showDuelReady(false);
@@ -3110,6 +3232,7 @@
     hudBestLabel.innerHTML = BEST_LABEL;
     hudBestBox.classList.remove('urgent');
     btnDuel.hidden = false;
+    btnMode.hidden = false;
     duelBar.hidden = true;
     bestText = '';
     if (!load()) newGame(); // tek kişilik oyun kaldığı yerden
@@ -3210,6 +3333,8 @@
       duel: () => (duel ? { phase: duel.phase, turn: duel.turn, names: duel.names.slice(), order: duel.order.slice(), results: duel.results.slice(), wins: duel.wins.slice(), left: duel.left, seed: duel.seed } : null),
       duelTime: ms => { if (duel && duel.phase === 'play') duel.endsAt = performance.now() + ms; },
       save: () => save(),
+      mode: () => (LIGHT ? 'light' : 'dark'),
+      setMode: m => applyMode(m === 'light', true),
       clearInfo: arr => { const ci = clearInfoOn(Int8Array.from(arr)); return { one: ci.one.map(q => q.id), multi: ci.multi.map(q => q.id), perfect: ci.perfect.map(q => q.id), top: ci.top }; },
       newGame
     };
