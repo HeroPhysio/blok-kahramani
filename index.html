@@ -20,7 +20,7 @@
 <meta property="og:image:height" content="630">
 <meta property="og:locale" content="tr_TR">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="bk-build" content="4849e6f774">
+<meta name="bk-build" content="7612df875e">
 <meta name="theme-color" content="#050817">
 <meta name="author" content="Baran Yavuz, Hero Uygulama Yazılım Teknolojileri Limited Şirketi">
 <meta name="color-scheme" content="dark">
@@ -481,6 +481,124 @@
   #duelBar.ahead { border-color: rgba(80, 230, 140, .85); color: #b9ffd5; box-shadow: 0 0 16px rgba(80, 230, 140, .35); }
   #duelBar.ahead b { color: #6dffa8; }
   .hud-best.urgent #hudBest { color: #ff6b7a; text-shadow: 0 0 .4em rgba(255, 80, 100, .85); animation: pulse .9s ease-in-out infinite; }
+  /* Haftalık skor tablosu: başlangıç ekranında kartın altında (yatay ekranda yanında), ayrıca ayrı pencerede */
+  .st-wrap { margin: auto; display: flex; flex-direction: column; align-items: stretch; gap: 14px; width: min(380px, 100%); }
+  .st-wrap > .card { margin: 0; width: 100%; }
+  @media (orientation: landscape) and (min-width: 700px) {
+    .st-wrap { flex-direction: row; align-items: stretch; width: min(780px, 100%); }
+    .st-wrap > .card, .st-wrap > .lb { flex: 1 1 0; min-width: 0; }
+  }
+  .lb {
+    position: relative;
+    padding: 14px 12px 12px;
+    border-radius: 22px;
+    text-align: left;
+    cursor: default;
+    background: linear-gradient(180deg, rgba(58, 38, 4, .95), rgba(12, 14, 40, .97) 34%, rgba(7, 12, 36, .98));
+    border: 1px solid rgba(255, 197, 49, .6);
+    box-shadow: inset 0 0 0 1px rgba(255, 197, 49, .08), 0 18px 50px rgba(0, 0, 0, .55), 0 0 40px rgba(255, 176, 40, .25);
+    animation: card-in .6s .1s cubic-bezier(.2, 1.3, .35, 1) both;
+  }
+  .lb::before {
+    content: "";
+    position: absolute;
+    left: 12%;
+    right: 12%;
+    top: -1px;
+    height: 2px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, transparent, #ffe28a, transparent);
+    box-shadow: 0 0 14px var(--gold);
+  }
+  .lb-head { display: flex; align-items: center; gap: 10px; margin: 0 2px 10px; }
+  .lb-trophy { width: 36px; height: 36px; flex: none; filter: drop-shadow(0 0 7px rgba(255, 197, 49, .75)); animation: lbGlow 2.6s ease-in-out infinite; }
+  .lb-titles { min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+  .lb-title { margin: 0; font: 400 clamp(17px, 5.2vw, 20px)/1.05 var(--display); letter-spacing: .03em; color: var(--gold); text-shadow: 0 0 14px rgba(255, 190, 40, .5); }
+  .lb-time { font: 700 12px/1 var(--ui); letter-spacing: .1em; color: #9fe9ff; }
+  .lb-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+  .lb-row {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    min-height: 28px;
+    padding: 3px 10px 3px 5px;
+    border-radius: 10px;
+    background: rgba(16, 28, 72, .72);
+    font: 700 15px/1.1 var(--ui);
+    letter-spacing: .04em;
+    color: var(--text);
+  }
+  .lb-rank { display: grid; place-items: center; height: 21px; border-radius: 7px; font: 400 12px/1 var(--display); color: #9fb4e6; background: rgba(255, 255, 255, .06); font-variant-numeric: tabular-nums; }
+  .lb-name { min-width: 0; display: flex; align-items: center; gap: 6px; overflow: hidden; white-space: nowrap; }
+  .lb-name span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .lb-name svg { width: 16px; height: 12px; flex: none; fill: var(--gold); filter: drop-shadow(0 0 4px rgba(255, 197, 49, .85)); }
+  .lb-name em { flex: none; padding: 2px 5px 1px; border-radius: 5px; font: 700 10px/1 var(--ui); font-style: normal; letter-spacing: .12em; color: #041230; background: #5ff0ff; }
+  .lb-score { font: 400 14px/1 var(--display); color: #fff; font-variant-numeric: tabular-nums; }
+  .lb-row.r1 { background: linear-gradient(90deg, rgba(255, 197, 49, .3), rgba(255, 197, 49, .07)); box-shadow: inset 0 0 0 1px rgba(255, 214, 100, .6), 0 0 16px rgba(255, 190, 40, .18); }
+  .lb-row.r1 .lb-rank { color: #2a1800; background: linear-gradient(180deg, #ffe892, #ffb51f); box-shadow: 0 0 10px rgba(255, 197, 49, .65); }
+  .lb-row.r1 .lb-score { color: var(--gold); text-shadow: 0 0 10px rgba(255, 190, 40, .55); }
+  .lb-row.r2 .lb-rank { color: #1b2233; background: linear-gradient(180deg, #f4f7ff, #a7b4cc); }
+  .lb-row.r3 .lb-rank { color: #2a1406; background: linear-gradient(180deg, #ffc896, #c8743a); }
+  .lb-row.me { box-shadow: inset 0 0 0 1.5px rgba(43, 227, 255, .9), 0 0 12px rgba(43, 227, 255, .28); }
+  .lb-gap { padding: 2px 0 0; text-align: center; font: 700 12px/1 var(--ui); letter-spacing: .3em; color: rgba(142, 166, 216, .7); }
+  .lb-msg { margin: 0; padding: 14px 10px; border-radius: 12px; text-align: center; font: 600 14px/1.35 var(--ui); color: var(--muted); background: rgba(16, 28, 72, .55); }
+  .lb-msg b { color: var(--gold); font-weight: 700; }
+  .lb-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; margin: 9px 2px 0; font: 600 12px/1.3 var(--ui); color: var(--muted); }
+  .lb-act {
+    appearance: none;
+    -webkit-appearance: none;
+    display: block;
+    width: 100%;
+    margin-top: 10px;
+    padding: 11px 12px 10px;
+    border-radius: 13px;
+    border: 1px solid rgba(255, 197, 49, .75);
+    background: rgba(255, 197, 49, .12);
+    color: var(--gold);
+    font: 700 14px/1.1 var(--ui);
+    letter-spacing: .1em;
+    cursor: pointer;
+  }
+  .lb-link { appearance: none; -webkit-appearance: none; padding: 4px 0; border: 0; background: none; color: #7fb6ff; font: 700 12px/1 var(--ui); letter-spacing: .08em; cursor: pointer; }
+  .lb-act:focus-visible, .lb-link:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .lb-skel { height: 28px; border-radius: 10px; background: linear-gradient(90deg, rgba(20, 34, 86, .55) 0%, rgba(44, 66, 140, .6) 50%, rgba(20, 34, 86, .55) 100%); background-size: 200% 100%; animation: lbShimmer 1.2s linear infinite; }
+  @keyframes lbGlow { 50% { filter: drop-shadow(0 0 13px rgba(255, 197, 49, 1)); transform: scale(1.06); } }
+  @keyframes lbShimmer { to { background-position: -200% 0; } }
+  /* Ayrı skor tablosu penceresi */
+  .lb-card { padding: 14px 14px 16px; }
+  .lb-card .lb { animation: none; }
+  /* Oyun sonu: haftalık sıra */
+  .go-week {
+    appearance: none;
+    -webkit-appearance: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    width: 100%;
+    margin: -6px 0 14px;
+    padding: 10px 12px 9px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 197, 49, .55);
+    background: rgba(255, 197, 49, .09);
+    color: var(--text);
+    font: 700 14px/1.2 var(--ui);
+    letter-spacing: .05em;
+    cursor: pointer;
+  }
+  .go-week svg { width: 22px; height: 22px; flex: none; }
+  .go-week b { font: 400 19px/1 var(--display); color: var(--gold); text-shadow: 0 0 10px rgba(255, 190, 40, .45); }
+  .go-week i { font-style: normal; color: #9fe9ff; }
+  .go-week:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  /* Takma ad penceresi */
+  .nk-err { margin: -4px 0 12px; text-align: left; font: 600 13px/1.3 var(--ui); color: #ff8fa0; }
+  #ovNick { z-index: 22; } /* skor tablosu penceresinden açılınca onun üstünde */
+  .nk-del { display: block; margin: 2px auto 0; color: #ff8fa0; font-size: 12px; }
+  html.light .nk-del { color: #d4243c; }
+  /* Üst bilgideki REKOR alanı: dokununca skor tablosu açılır (görünmez düğme) */
+  #btnBoard { position: fixed; z-index: 4; left: 0; top: 0; padding: 0; border: 0; border-radius: 12px; background: transparent; cursor: pointer; }
+  #btnBoard:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
   @media (max-height: 560px) {
     .card { padding: 16px 18px; }
   }
@@ -615,6 +733,24 @@
   html.light #credits { color: rgba(60, 76, 110, .85); }
   html.light #credits b { color: #1d2b4d; }
   html.light #credits a, html.light .card-foot a { color: #0a74c9; }
+  html.light .lb { background: linear-gradient(180deg, #fff3cf, #ffffff 34%); border-color: rgba(214, 150, 0, .55); box-shadow: 0 12px 34px rgba(30, 50, 90, .14), 0 0 26px rgba(255, 180, 40, .2); }
+  html.light .lb-title { color: #b87400; text-shadow: none; }
+  html.light .lb-time { color: #0a74c9; }
+  html.light .lb-row { background: #eef3fb; color: #1d2b4d; }
+  html.light .lb-rank { color: #5b6b8c; background: rgba(30, 60, 120, .08); }
+  html.light .lb-score { color: #13224f; }
+  html.light .lb-row.r1 { background: linear-gradient(90deg, rgba(255, 197, 49, .35), rgba(255, 197, 49, .1)); box-shadow: inset 0 0 0 1px rgba(214, 150, 0, .55); }
+  html.light .lb-row.r1 .lb-score { color: #b87400; text-shadow: none; }
+  html.light .lb-row.me { box-shadow: inset 0 0 0 1.5px rgba(10, 116, 201, .85); }
+  html.light .lb-msg { background: #eef3fb; color: #5b6b8c; }
+  html.light .lb-msg b, html.light .lb-act { color: #b87400; }
+  html.light .lb-act { background: rgba(255, 197, 49, .16); border-color: rgba(214, 150, 0, .7); }
+  html.light .lb-link { color: #0a74c9; }
+  html.light .lb-skel { background: linear-gradient(90deg, #e6edf8 0%, #f6f9fe 50%, #e6edf8 100%); background-size: 200% 100%; }
+  html.light .go-week { background: rgba(255, 197, 49, .14); border-color: rgba(214, 150, 0, .6); color: #1d2b4d; }
+  html.light .go-week b { color: #b87400; text-shadow: none; }
+  html.light .go-week i { color: #0a74c9; }
+  html.light .nk-err { color: #d4243c; }
 
   /* Tüm süreğen animasyonlar yalnızca opaklık ve dönüşüm kullanır: GPU'da, çizim yapmadan oynar */
   @keyframes twinkle { from { opacity: .12; } to { opacity: 1; } }
@@ -638,7 +774,7 @@
   @keyframes pulse { 50% { transform: scale(1.06); } }
   body.modal #twinkle i, body.modal #ring, body.modal #hint { animation-play-state: paused; }
   @media (prefers-reduced-motion: reduce) {
-    #twinkle i, #ring, #hl.pulse, #hint, #notice, .overlay, .card, .badge, .hud-best.urgent #hudBest { animation: none; }
+    #twinkle i, #ring, #hl.pulse, #hint, #notice, .overlay, .card, .badge, .hud-best.urgent #hudBest, .lb, .lb-trophy, .lb-skel { animation: none; }
     #twinkle i { opacity: .5; }
     .float { animation: floatFade .95s linear both; }
   }
@@ -706,6 +842,7 @@
 <button id="btnSound" class="icon-btn" type="button" aria-label="Sesi kapat" title="Sesi kapat"></button>
 <button id="btnDuel" class="icon-btn" type="button" aria-label="İki kişilik oyna" title="İki kişilik oyna"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 19.5c.6-3.4 3-5.3 6-5.3s5.4 1.9 6 5.3"/><circle cx="17" cy="9" r="2.6"/><path d="M16.6 14.3c2.4.1 4 1.7 4.6 4.6"/></svg></button>
 <button id="btnMode" class="icon-btn" type="button" aria-label="Aydınlık moda geç" title="Aydınlık moda geç"></button>
+<button id="btnBoard" type="button" aria-label="Haftalık skor tablosu" title="Haftalık skor tablosu" hidden></button>
 <div id="duelBar" aria-hidden="true" hidden></div>
 
 <div id="insetProbe" aria-hidden="true"></div>
@@ -723,6 +860,7 @@
       <div class="stat"><span>ÇİZGİ</span><b id="goLines">0</b></div>
       <div class="stat"><span>EN İYİ KOMBO</span><b id="goCombo">×0</b></div>
     </div>
+    <button id="goWeek" class="go-week" type="button" hidden></button>
     <button id="btnAgain" class="btn btn-primary" type="button">TEKRAR OYNA</button>
     <button id="btnDuelOver" class="btn btn-ghost btn-gap btn-ico" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 19.5c.6-3.4 3-5.3 6-5.3s5.4 1.9 6 5.3"/><circle cx="17" cy="9" r="2.6"/><path d="M16.6 14.3c2.4.1 4 1.7 4.6 4.6"/></svg>İKİ KİŞİLİK OYNA</button>
     <p class="card-foot">Deneme sürümü · Hero Uygulama Yazılım Teknolojileri Limited Şirketi<br>Kurucu: Baran Yavuz · <a href="mailto:iletisim@herouygulama.com.tr">iletisim@herouygulama.com.tr</a><br><a href="https://herouygulama.com.tr" target="_blank" rel="noopener">herouygulama.com.tr</a> · <a href="https://herophysio.github.io/blok-kahramani/gizlilik.html">Gizlilik Politikası</a></p>
@@ -730,6 +868,7 @@
 </div>
 
 <div id="ovStart" class="overlay" role="dialog" aria-modal="true" aria-labelledby="stTitle" hidden>
+  <div class="st-wrap">
   <div id="stCard" class="card" tabindex="-1">
     <div class="badge badge-beta">DENEME SÜRÜMÜ</div>
     <h2 id="stTitle" class="title">HERO BLOCK</h2>
@@ -737,6 +876,29 @@
     <button id="btnStart" class="btn btn-primary" type="button">OYNA</button>
     <button id="btnDuelStart" class="btn btn-ghost btn-gap btn-ico" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 19.5c.6-3.4 3-5.3 6-5.3s5.4 1.9 6 5.3"/><circle cx="17" cy="9" r="2.6"/><path d="M16.6 14.3c2.4.1 4 1.7 4.6 4.6"/></svg>İKİ KİŞİLİK</button>
     <p class="card-foot">Hero Uygulama Yazılım Teknolojileri Limited Şirketi<br>Kurucu: Baran Yavuz · <a href="mailto:iletisim@herouygulama.com.tr">iletisim@herouygulama.com.tr</a><br><a href="https://herouygulama.com.tr" target="_blank" rel="noopener">herouygulama.com.tr</a> · <a href="https://herophysio.github.io/blok-kahramani/gizlilik.html">Gizlilik Politikası</a></p>
+  </div>
+  <section id="lbStart" class="lb" aria-label="Haftanın en iyileri" hidden></section>
+  </div>
+</div>
+
+<div id="ovNick" class="overlay" role="dialog" aria-modal="true" aria-labelledby="nkTitle" hidden>
+  <div id="nkCard" class="card" tabindex="-1">
+    <div class="badge badge-beta">HAFTALIK SKOR TABLOSU</div>
+    <h2 id="nkTitle" class="title small">OYUNCU ADIN</h2>
+    <p class="sub">Haftanın en iyileri tablosunda bu ad görünecek.</p>
+    <div class="field"><label for="nkName">TAKMA AD</label><input id="nkName" type="text" maxlength="14" autocomplete="nickname" autocorrect="off" autocapitalize="characters" spellcheck="false" enterkeyhint="done" placeholder="ÖR. KRALALİ"></div>
+    <p id="nkErr" class="nk-err" role="alert" hidden></p>
+    <button id="nkSave" class="btn btn-primary" type="button">KAYDET</button>
+    <button id="nkSkip" class="link-btn" type="button">ŞİMDİLİK GEÇ</button>
+    <button id="nkDel" class="link-btn nk-del" type="button" hidden>SKOR KAYITLARIMI SİL</button>
+    <p class="card-foot">Gerçek adını yazmak zorunda değilsin. İlk 10'a girersen takma adın ve puanın herkese görünür. <a href="https://herophysio.github.io/blok-kahramani/gizlilik.html">Gizlilik Politikası</a></p>
+  </div>
+</div>
+
+<div id="ovBoard" class="overlay" role="dialog" aria-modal="true" aria-label="Haftanın en iyileri" hidden>
+  <div id="lbCard" class="card lb-card" tabindex="-1">
+    <section id="lbFull" class="lb"></section>
+    <button id="lbClose" class="btn btn-ghost btn-gap" type="button">KAPAT</button>
   </div>
 </div>
 
@@ -1064,6 +1226,9 @@
   const K_SAVE = 'blokKahramani.kayit.v2';
   const K_SOUND = 'blokKahramani.ses';
   const K_MODE = 'blokKahramani.mod'; // aydınlık / karanlık mod seçimi (varsayılan karanlık)
+  // Haftalık skor tablosu sunucusu (boşsa tablo ve takma ad sorusu kapalı). Testte #test&skor=<adres> ile değişir
+  const HASHQ = new URLSearchParams(location.hash.slice(1));
+  const SKOR_API = (HASHQ.has('test') && HASHQ.get('skor')) || 'https://skor.herouygulama.com.tr/index.php';
   let LIGHT = store.get(K_MODE, 'dark') === 'light';
   document.documentElement.classList.toggle('light', LIGHT);
 
@@ -1101,6 +1266,9 @@
   const ovConfirm = $('ovConfirm');
   const ovStart = $('ovStart');
   const ovDuel = $('ovDuel');
+  const ovNick = $('ovNick');
+  const ovBoard = $('ovBoard');
+  const btnBoard = $('btnBoard');
   const duelBar = $('duelBar');
   const btnDuel = $('btnDuel');
   const hudBestLabel = hudBestBox.querySelector('.hud-label');
@@ -1316,6 +1484,7 @@
     bestText = '';
     setScoreText(displayScore);
     updateHud();
+    if (typeof placeBoardBtn === 'function') placeBoardBtn();
   }
 
   /* ================= Önceden çizilen grafikler ================= */
@@ -1583,7 +1752,7 @@
   }
 
   function updateHint() { hint.hidden = !(moves === 0 && gameState === 'play' && !drag && !duel); }
-  function setModal() { document.body.classList.toggle('modal', !ovOver.hidden || !ovConfirm.hidden || !ovStart.hidden || !ovDuel.hidden); }
+  function setModal() { document.body.classList.toggle('modal', !ovOver.hidden || !ovConfirm.hidden || !ovStart.hidden || !ovDuel.hidden || !ovNick.hidden || !ovBoard.hidden); }
 
   // Uzun sayılar kutusuna sığsın diye yazı boyunu küçültür
   function fitText(el, text, maxPx, width) {
@@ -1920,6 +2089,7 @@
     // Her 10.000 puanda tema değişir: patlatma animasyonu eski renklerle bitsin, sonra geçilsin
     if (themeFor(score) !== themeIdx) queueTheme(ln.rows.length || ln.cols.length ? 520 : 80);
     if (!tray.some(t => t && t.fits)) triggerGameOver();
+    else skorCanli();
   }
 
   let themeIdx = -1, themeTimer = 0;
@@ -2033,6 +2203,8 @@
     checkUpdate();
     if (gameState !== 'play') return;
     gameState = 'ending';
+    Skor.sonuc = null;
+    skorGonder(score, moves, 'bitti');
     clearTimeout(themeTimer);
     overT0 = performance.now() + 650;
     store.del(K_SAVE);
@@ -2061,6 +2233,7 @@
     goScore.textContent = '0';
     ovConfirm.hidden = true;
     ovOver.hidden = false;
+    oyunSonuCiz();
     setModal();
     countUp(goScore, score, 900);
     setTimeout(() => focusDialog('btnAgain', 'goCard'), 60);
@@ -3014,7 +3187,13 @@
   document.addEventListener('gesturestart', e => e.preventDefault());
   window.addEventListener('blur', () => { if (drag) endDrag(null, true); });
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) { if (drag) endDrag(null, true); pauseDuel(); Sound.pause(); return; }
+    if (document.hidden) {
+      if (drag) endDrag(null, true);
+      pauseDuel();
+      Sound.pause();
+      if (gameState === 'play' && !duel && score > 0) skorGonder(score, moves, 'arka');
+      return;
+    }
     // Geri dönünce ses durmuşsa (iPhone'da sık olur) tek dokunuşla devam ekranı; düelloda süre durmuştur
     setTimeout(() => {
       if (document.hidden) return;
@@ -3032,10 +3211,11 @@
     $('stSub').textContent = cont ? 'Kaldığın yerden devam et.' : 'Parçaları sürükle, satır ve sütunları patlat!';
     ovStart.hidden = false;
     setModal();
+    if (SKOR_API) { $('lbStart').hidden = false; tabloCiz(); tabloYukle(false); }
     focusDialog('btnStart', 'stCard');
   }
   function startPlay(e) {
-    if (e && e.target && e.target.closest && e.target.closest('a')) return; // e-posta bağlantısı
+    if (e && e.target && e.target.closest && e.target.closest('a, .lb')) return; // bağlantılar ve skor tablosu oyunu başlatmaz
     Sound.unlock(true);
     ovStart.hidden = true;
     setModal();
@@ -3165,7 +3345,9 @@
   $('btnCancel').addEventListener('click', closeConfirm);
   $('btnConfirm').addEventListener('click', () => {
     ovConfirm.hidden = true;
-    if (confirmMode === 'duel') exitDuel(); else newGame();
+    if (confirmMode === 'duel') { exitDuel(); return; }
+    if (gameState === 'play' && score > 0) skorGonder(score, moves, 'yeniden');
+    newGame();
   });
   $('btnAgain').addEventListener('click', () => { if (updateReady) { applyUpdate(); return; } newGame(); });
   ovConfirm.addEventListener('pointerdown', e => { if (e.target === ovConfirm) closeConfirm(); });
@@ -3228,7 +3410,7 @@
     ovStart.hidden = true;
     ovOver.hidden = true;
     ovConfirm.hidden = true;
-    $('dName1').value = duelPrefs.n1 || '';
+    $('dName1').value = duelPrefs.n1 || (oyuncu.ad || '').slice(0, 12);
     $('dName2').value = duelPrefs.n2 || '';
     setDuelSecs(DUEL_SECS.indexOf(duelPrefs.secs) >= 0 ? duelPrefs.secs : 120);
     showDuelPanel('setup');
@@ -3479,6 +3661,354 @@
   $('dName1').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('dName2').focus(); } });
   $('dName2').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); } });
 
+  /* ================= Haftalık skor tablosu =================
+     Puanlar şirketin sunucusunda (skor.herouygulama.com.tr) tutulur; tablo her pazartesi 00:00'da (Türkiye saati)
+     sıfırlanır. Hesap yok: cihazda rastgele bir oyuncu kimliği ve oyuncunun seçtiği takma ad tutulur. Puan, oyuncunun
+     o haftaki en iyisini geçince gönderilir (oyun bitince, yeniden başlarken, uygulamadan çıkarken, uzun oyunda dakikada
+     bir). İnternet yoksa oyun aynen sürer; bekleyen puan bağlantı gelince gönderilir. */
+  const K_OYUNCU = 'blokKahramani.oyuncu';
+  const K_TABLO = 'blokKahramani.tablo';
+  const K_BEKLEYEN = 'blokKahramani.bekleyen';
+  const TROPHY = '<svg viewBox="0 0 24 24" aria-hidden="true">'
+    + '<path d="M6.5 5.5H3.6v1.6a4 4 0 0 0 3.6 4M17.5 5.5h2.9v1.6a4 4 0 0 1-3.6 4" fill="none" stroke="#ffc531" stroke-width="1.7" stroke-linecap="round"/>'
+    + '<path d="M6 3h12v5.6a6 6 0 0 1-12 0z" fill="#ffc531"/><path d="M12 3h6v5.6a6 6 0 0 1-6 6z" fill="#f0a818"/>'
+    + '<path d="M10.4 14.2h3.2v3.3h-3.2z" fill="#d98a00"/><rect x="7" y="17.5" width="10" height="3.3" rx="1.2" fill="#ffc531"/>'
+    + '<path d="M9 5.4v3.2a3 3 0 0 0 1.4 2.5" fill="none" stroke="#fff6c8" stroke-width="1.2" stroke-linecap="round"/></svg>';
+  const esc = v => String(v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  function yeniKimlik() {
+    try { if (crypto.randomUUID) return crypto.randomUUID(); } catch (e) { /* yok */ }
+    const b = new Uint8Array(16);
+    try { crypto.getRandomValues(b); } catch (e) { for (let i = 0; i < 16; i++) b[i] = Math.random() * 256 | 0; }
+    b[6] = (b[6] & 15) | 64; b[8] = (b[8] & 63) | 128;
+    const h = Array.from(b, x => x.toString(16).padStart(2, '0')).join('');
+    return h.slice(0, 8) + '-' + h.slice(8, 12) + '-' + h.slice(12, 16) + '-' + h.slice(16, 20) + '-' + h.slice(20);
+  }
+  const oyuncu = Object.assign({ id: '', ad: '', atla: false }, store.get(K_OYUNCU, null) || {});
+  if (typeof oyuncu.id !== 'string' || !/^[A-Za-z0-9-]{16,64}$/.test(oyuncu.id)) { oyuncu.id = yeniKimlik(); store.set(K_OYUNCU, oyuncu); }
+  if (typeof oyuncu.ad !== 'string') oyuncu.ad = '';
+
+  const Skor = { tablo: store.get(K_TABLO, null), durum: 'yok', yukleniyor: false, sonIstek: 0, gonderiyor: false, tekrar: false, sonGonderim: 0, zaman: 0, sonuc: null };
+  const lbEls = [$('lbStart'), $('lbFull')];
+
+  // Takma ad: 2-14 karakter; harf, rakam, boşluk, _ . - (sunucu ayrıca uygunsuz adları reddeder)
+  function adDenetle(v) {
+    const ad = String(v || '').trim().replace(/\s+/g, ' ');
+    if (!ad) return { hata: 'Bir takma ad yaz.' };
+    const n = Array.from(ad).length;
+    if (n < 2 || n > 14) return { hata: 'Takma ad 2-14 karakter olmalı.' };
+    if (!/^[\p{L}\p{N} _.\-]+$/u.test(ad) || !/[\p{L}\p{N}]/u.test(ad)) return { hata: 'Yalnızca harf, rakam, boşluk ve _ . - kullanılabilir.' };
+    return { ad };
+  }
+
+  // Sunucuya istek: GET tablo ya da POST (gövde düz metin JSON: tarayıcı ön istek yapmaz). 9 sn'de cevap yoksa vazgeçer
+  async function skorIstek(a, govde) {
+    const ctl = typeof AbortController === 'function' ? new AbortController() : null;
+    const t = ctl ? setTimeout(() => ctl.abort(), 9000) : 0;
+    try {
+      const opt = govde
+        ? { method: 'POST', body: JSON.stringify(govde), headers: { 'Content-Type': 'text/plain;charset=UTF-8' }, keepalive: true, cache: 'no-store' }
+        : { cache: 'no-store' };
+      if (ctl) opt.signal = ctl.signal;
+      const res = await fetch(SKOR_API + '?a=' + a + (govde ? '' : '&pid=' + encodeURIComponent(oyuncu.id)), opt);
+      const d = await res.json();
+      if (!d || typeof d !== 'object') throw new Error('yanıt yok');
+      return d;
+    } finally { clearTimeout(t); }
+  }
+
+  // Tablonun geçerli olduğu süre (sn): sunucunun bildirdiği kalan süre, alındığından beri geçen zaman düşülerek
+  const tabloKalan = t => (t && Number.isFinite(t.kalan) ? t.kalan - (Date.now() - t.alindi) / 1000 : -1);
+  const haftaEnIyi = () => (tabloKalan(Skor.tablo) > 0 && Skor.tablo.ben ? Skor.tablo.ben.puan : 0);
+
+  function tabloAl(d) {
+    Skor.tablo = { hafta: d.hafta, bitis: d.bitis, kalan: d.kalan, alindi: Date.now(), ilk10: Array.isArray(d.ilk10) ? d.ilk10 : [], ben: d.ben || null, toplam: d.toplam | 0 };
+    Skor.durum = 'tamam';
+    store.set(K_TABLO, Skor.tablo);
+  }
+
+  function tabloYukle(zorla) {
+    if (!SKOR_API || Skor.yukleniyor) return;
+    if (!zorla && Skor.durum === 'tamam' && Date.now() - Skor.sonIstek < 20000) return;
+    Skor.sonIstek = Date.now();
+    Skor.yukleniyor = true;
+    if (Skor.durum !== 'tamam') { Skor.durum = 'yukleniyor'; tabloCiz(); }
+    skorIstek('tablo')
+      .then(d => { if (!d.ok) throw new Error(d.mesaj || 'hata'); tabloAl(d); })
+      .catch(() => { Skor.durum = 'hata'; })
+      .then(() => { Skor.yukleniyor = false; tabloCiz(); oyunSonuCiz(); });
+  }
+
+  // Bekleyen puan: bu hafta gönderilemeyen (internet yok ya da takma ad yok) en yüksek puan
+  function bekleyenAl() {
+    const b = store.get(K_BEKLEYEN, null);
+    if (!b || !(b.puan > 0)) return null;
+    // Bilinen haftadan önce kazanılmışsa (hafta sıfırlandıysa) artık geçersiz
+    const t = Skor.tablo;
+    if (t && Number.isFinite(t.kalan)) {
+      const bitis = t.alindi + t.kalan * 1000, bas = bitis - 7 * 86400000;
+      if (b.t < bas || (Date.now() >= bitis && b.t < bitis)) { store.del(K_BEKLEYEN); return null; }
+    }
+    return b;
+  }
+  function bekleyenEkle(puan, hamle) {
+    const b = bekleyenAl();
+    if (!b || puan > b.puan) store.set(K_BEKLEYEN, { puan, hamle: Math.max(1, hamle | 0), t: Date.now() });
+  }
+
+  function skorGonder(puan, hamle, neden) {
+    if (!SKOR_API || duel || !(puan > 0)) return;
+    if (puan > haftaEnIyi()) bekleyenEkle(puan, hamle);
+    bekleyenGonder(neden);
+  }
+  function bekleyenGonder(neden) {
+    if (!SKOR_API || duel) return;
+    const b = bekleyenAl();
+    if (!b || b.puan <= haftaEnIyi()) {
+      if (b) store.del(K_BEKLEYEN);
+      if (neden === 'bitti') { Skor.sonuc = { durum: 'tamam', yeni: false }; oyunSonuCiz(); }
+      return;
+    }
+    if (!oyuncu.ad) {
+      if (neden === 'bitti') { Skor.sonuc = { durum: 'adsiz' }; oyunSonuCiz(); }
+      return;
+    }
+    if (neden === 'bitti') { Skor.sonuc = { durum: 'gidiyor' }; oyunSonuCiz(); }
+    if (Skor.gonderiyor) { Skor.tekrar = true; return; }
+    const bekle = 3500 - (Date.now() - Skor.sonGonderim);   // sunucu aynı oyuncudan 3 sn'de bir kabul eder
+    if (bekle > 0) { clearTimeout(Skor.zaman); Skor.zaman = setTimeout(() => bekleyenGonder(neden), bekle); return; }
+    Skor.gonderiyor = true;
+    Skor.sonGonderim = Date.now();
+    skorIstek('gonder', { pid: oyuncu.id, ad: oyuncu.ad, puan: b.puan, hamle: b.hamle, v: 1 })
+      .then(d => {
+        if (d.ok) {
+          tabloAl(d);
+          const kalan = store.get(K_BEKLEYEN, null);
+          if (kalan && kalan.puan <= b.puan) store.del(K_BEKLEYEN);
+          Skor.sonuc = { durum: 'tamam', yeni: !!d.yeni };
+        } else if (d.hata === 'ad') {
+          // Sunucu takma adı uygun bulmadı: puan bekler, oyuncudan yeni ad istenir
+          oyuncu.ad = ''; oyuncu.atla = false; store.set(K_OYUNCU, oyuncu);
+          Skor.sonuc = { durum: 'adhata', mesaj: d.mesaj || 'Bu takma ad uygun değil.' };
+        } else if (d.hata === 'gecersiz') {
+          store.del(K_BEKLEYEN);
+          Skor.sonuc = { durum: 'hata' };
+        } else {
+          Skor.sonuc = { durum: 'hata' };
+        }
+      })
+      .catch(() => { Skor.sonuc = { durum: 'hata' }; })
+      .then(() => {
+        Skor.gonderiyor = false;
+        tabloCiz();
+        oyunSonuCiz();
+        if (Skor.tekrar) { Skor.tekrar = false; bekleyenGonder('oyun'); }
+      });
+  }
+  // Uzun oyunda tablo canlı kalsın: haftalık en iyiyi geçince en çok dakikada bir gönderilir
+  function skorCanli() {
+    if (SKOR_API && !duel && oyuncu.ad && score > haftaEnIyi() && Date.now() - Skor.sonGonderim > 60000) skorGonder(score, moves, 'oyun');
+  }
+
+  function kalanYazi() {
+    const s = Math.max(0, Math.floor(tabloKalan(Skor.tablo)));
+    const g = Math.floor(s / 86400), sa = Math.floor((s % 86400) / 3600), dk = Math.floor((s % 3600) / 60);
+    return 'SIFIRLANMAYA ' + (g ? g + ' GÜN' + (sa ? ' ' + sa + ' SAAT' : '') : sa ? sa + ' SAAT' + (dk ? ' ' + dk + ' DK' : '') : Math.max(1, dk) + ' DK');
+  }
+
+  function satir(k, ben) {
+    const r = k.sira | 0, crown = r === 1 ? CROWN : '';
+    return '<li class="lb-row' + (r <= 3 ? ' r' + r : '') + (ben ? ' me' : '') + '"><span class="lb-rank">' + r + '</span><span class="lb-name">' + crown
+      + '<span>' + esc(upTR(String(k.ad))) + '</span>' + (ben ? '<em>SEN</em>' : '') + '</span><span class="lb-score">' + fmt(k.puan) + '</span></li>';
+  }
+
+  // Tabloyu çizer (başlangıç ekranındaki ve ayrı penceredeki)
+  function tabloCiz() {
+    if (!SKOR_API) return;
+    const t = Skor.tablo, gecerli = tabloKalan(t) > 0;
+    let govde = '';
+    if (gecerli && t.ilk10.length) {
+      govde = '<ol class="lb-list">' + t.ilk10.map(k => satir(k, !!k.sen)).join('') + '</ol>';
+      if (t.ben && t.ben.sira > 10) govde += '<div class="lb-gap" aria-hidden="true">···</div><ol class="lb-list">' + satir(t.ben, true) + '</ol>';
+      if (Skor.durum === 'hata') govde += '<div class="lb-foot"><span>Çevrimdışı: son görülen tablo</span></div>';
+    } else if (gecerli && Skor.durum === 'tamam') {
+      govde = '<p class="lb-msg">Bu hafta henüz kimse yok.<br><b>İlk sen ol!</b></p>';
+    } else if (Skor.durum === 'hata') {
+      govde = '<p class="lb-msg">Skor tablosuna bağlanılamadı.<br>İnternet gelince kendiliğinden yenilenir.</p><button class="lb-act" type="button" data-lb="yenile">TEKRAR DENE</button>';
+    } else {
+      govde = '<div class="lb-list" aria-label="Yükleniyor">' + '<div class="lb-skel"></div>'.repeat(5) + '</div>';
+    }
+    if (!oyuncu.ad) {
+      const b = bekleyenAl();
+      govde += '<button class="lb-act" type="button" data-lb="ad">' + (b ? 'ADINI YAZ, ' + fmt(b.puan) + ' PUANLA TABLOYA GİR' : 'ADINI YAZ, TABLOYA GİR') + '</button>';
+    } else {
+      govde += '<div class="lb-foot"><span>Sen: <b>' + esc(upTR(oyuncu.ad)) + '</b>' + (gecerli && t.toplam ? ' · ' + fmt(t.toplam) + ' oyuncu' : '') + '</span>'
+        + '<button class="lb-link" type="button" data-lb="ad">ADINI DEĞİŞTİR</button></div>';
+    }
+    const html = '<header class="lb-head">' + TROPHY.replace('<svg', '<svg class="lb-trophy"') + '<div class="lb-titles"><h3 class="lb-title">HAFTANIN EN İYİLERİ</h3>'
+      + '<span class="lb-time">' + (gecerli ? kalanYazi() : 'HER PAZARTESİ SIFIRLANIR') + '</span></div></header>' + govde;
+    lbEls.forEach(el => { if (el) el.innerHTML = html; });
+  }
+
+  // Oyun sonu kartındaki haftalık sıra düğmesi
+  const goWeek = $('goWeek');
+  function oyunSonuCiz() {
+    if (!goWeek) return;
+    const r = Skor.sonuc;
+    if (!SKOR_API || duel || !r) { goWeek.hidden = true; return; }
+    const t = Skor.tablo, ben = tabloKalan(t) > 0 && t.ben;
+    let html = '', ne = 'tablo';
+    if (r.durum === 'gidiyor') html = TROPHY + '<span>Skorun tabloya gönderiliyor…</span>';
+    else if (r.durum === 'adsiz') { html = TROPHY + '<span>Adını yaz, haftalık tabloya gir <i>›</i></span>'; ne = 'ad'; }
+    else if (r.durum === 'adhata') { html = TROPHY + '<span>Takma adın uygun bulunmadı. Yeni ad seç <i>›</i></span>'; ne = 'ad'; }
+    else if (r.durum === 'hata') html = TROPHY + '<span>Tabloya bağlanılamadı; internet gelince gönderilir <i>›</i></span>';
+    else if (ben) html = TROPHY + '<span>BU HAFTA</span><b>#' + fmt(ben.sira) + '</b><span>' + (r.yeni ? '<i>Haftalık rekorun!</i>' : 'En iyin ' + fmt(ben.puan)) + ' <i>›</i></span>';
+    else html = TROPHY + '<span>Haftanın en iyilerini gör <i>›</i></span>';
+    goWeek.innerHTML = html;
+    goWeek.dataset.ne = ne;
+    goWeek.hidden = false;
+  }
+
+  // Takma ad penceresi
+  let adSonra = null;
+  function adSor(sonra, mesaj) {
+    if (!SKOR_API) { if (sonra) sonra(); return; }
+    adSonra = sonra || null;
+    const inp = $('nkName');
+    inp.value = oyuncu.ad || '';
+    $('nkErr').hidden = !mesaj;
+    $('nkErr').textContent = mesaj || '';
+    $('nkSave').disabled = false;
+    const del = $('nkDel');
+    del.hidden = !oyuncu.ad;
+    del.textContent = 'SKOR KAYITLARIMI SİL';
+    delete del.dataset.emin;
+    $('nkSkip').textContent = oyuncu.ad ? 'VAZGEÇ' : 'ŞİMDİLİK GEÇ';
+    ovNick.hidden = false;
+    setModal();
+    setTimeout(() => { try { inp.focus({ preventScroll: true }); } catch (e) { /* odak yok */ } }, 80);
+  }
+  function adKapat() {
+    ovNick.hidden = true;
+    setModal();
+    const f = adSonra;
+    adSonra = null;
+    if (f) f();
+  }
+  async function adKaydet() {
+    const r = adDenetle($('nkName').value), err = $('nkErr'), btn = $('nkSave');
+    if (r.hata) { err.textContent = r.hata; err.hidden = false; return; }
+    btn.disabled = true;
+    try {
+      // Sunucu adı denetler (uygunsuz ad reddedilir); bağlantı yoksa ad şimdilik kabul edilir
+      const d = await skorIstek('ad', { pid: oyuncu.id, ad: r.ad });
+      if (!d.ok && d.hata === 'ad') { err.textContent = d.mesaj || 'Bu takma ad uygun değil.'; err.hidden = false; btn.disabled = false; return; }
+      if (d.ok) tabloAl(d);
+    } catch (e) { /* çevrimdışı */ }
+    btn.disabled = false;
+    oyuncu.ad = r.ad;
+    oyuncu.atla = false;
+    store.set(K_OYUNCU, oyuncu);
+    announce('Takma adın ' + r.ad + ' olarak kaydedildi.');
+    if (Skor.sonuc && (Skor.sonuc.durum === 'adsiz' || Skor.sonuc.durum === 'adhata')) Skor.sonuc = { durum: 'gidiyor' };
+    tabloCiz();
+    oyunSonuCiz();
+    adKapat();
+    bekleyenGonder(Skor.sonuc && Skor.sonuc.durum === 'gidiyor' ? 'bitti' : 'ad');
+    tabloYukle(true);
+  }
+  $('nkSave').addEventListener('click', adKaydet);
+  $('nkName').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); adKaydet(); } });
+  $('nkName').addEventListener('input', () => { $('nkErr').hidden = true; });
+  // Skor kayıtlarını silme: iki dokunuşla (yanlışlıkla silinmesin); sonra yeni, bağlantısız bir oyuncu kimliği
+  $('nkDel').addEventListener('click', async () => {
+    const del = $('nkDel'), err = $('nkErr');
+    if (!del.dataset.emin) {
+      del.dataset.emin = '1';
+      del.textContent = 'EMİN MİSİN? SİLMEK İÇİN TEKRAR DOKUN';
+      clearTimeout(del._t);
+      del._t = setTimeout(() => { delete del.dataset.emin; del.textContent = 'SKOR KAYITLARIMI SİL'; }, 5000);
+      return;
+    }
+    del.disabled = true;
+    try {
+      const d = await skorIstek('sil', { pid: oyuncu.id });
+      if (!d.ok) throw new Error(d.mesaj || 'hata');
+      oyuncu.id = yeniKimlik();
+      oyuncu.ad = '';
+      oyuncu.atla = true;
+      store.set(K_OYUNCU, oyuncu);
+      store.del(K_BEKLEYEN);
+      store.del(K_TABLO);
+      Skor.tablo = null;
+      Skor.durum = 'yok';
+      Skor.sonuc = null;
+      announce('Skor kayıtların silindi.');
+      adKapat();
+      tabloCiz();
+      oyunSonuCiz();
+      tabloYukle(true);
+    } catch (e) {
+      err.textContent = 'Silinemedi: bağlantı yok. İnternet gelince tekrar dene.';
+      err.hidden = false;
+    }
+    del.disabled = false;
+  });
+  $('nkSkip').addEventListener('click', () => {
+    if (!oyuncu.ad) { oyuncu.atla = true; store.set(K_OYUNCU, oyuncu); }
+    tabloCiz();
+    adKapat();
+  });
+
+  // Ayrı skor tablosu penceresi (oyun sonu kartından ve üst bilgideki REKOR alanından açılır)
+  function tabloAc() {
+    if (!SKOR_API) return;
+    if (drag) endDrag(null, true);
+    tabloCiz();
+    ovBoard.hidden = false;
+    setModal();
+    tabloYukle(true);
+    focusDialog('lbClose', 'lbCard');
+  }
+  function tabloKapat() {
+    ovBoard.hidden = true;
+    setModal();
+  }
+  $('lbClose').addEventListener('click', tabloKapat);
+  ovBoard.addEventListener('pointerdown', e => { if (e.target === ovBoard) tabloKapat(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !ovBoard.hidden) tabloKapat(); });
+  btnBoard.addEventListener('click', tabloAc);
+  goWeek.addEventListener('click', () => {
+    if (goWeek.dataset.ne === 'ad') adSor(null, Skor.sonuc && Skor.sonuc.durum === 'adhata' ? Skor.sonuc.mesaj : '');
+    else tabloAc();
+  });
+  // Tablodaki düğmeler (her iki kopyada da)
+  lbEls.forEach(el => el && el.addEventListener('click', e => {
+    const b = e.target.closest && e.target.closest('[data-lb]');
+    if (!b) return;
+    if (b.dataset.lb === 'ad') adSor();
+    else if (b.dataset.lb === 'yenile') tabloYukle(true);
+  }));
+
+  // Üst bilgideki REKOR alanının üstüne görünmez düğme (düelloda o alan süre sayacıdır: kapalı)
+  function placeBoardBtn() {
+    if (!SKOR_API || duel || !hudBestBox.offsetWidth) { btnBoard.hidden = true; return; }
+    const r = hudBestBox.getBoundingClientRect(), s = btnBoard.style;
+    s.left = Math.round(r.left - 6) + 'px';
+    s.top = Math.round(r.top - 6) + 'px';
+    s.width = Math.round(r.width + 12) + 'px';
+    s.height = Math.round(r.height + 12) + 'px';
+    btnBoard.hidden = false;
+  }
+
+  // Süre yazısı dakikada bir yenilenir; hafta bitince tablo yeniden alınır; bağlantı gelince bekleyen puan gider
+  setInterval(() => {
+    if (!SKOR_API || document.hidden) return;
+    if (Skor.tablo && tabloKalan(Skor.tablo) <= 0 && Skor.durum === 'tamam') { Skor.durum = 'yok'; tabloYukle(true); }
+    if (!ovStart.hidden || !ovBoard.hidden) { tabloCiz(); tabloYukle(false); }
+  }, 30000);
+  window.addEventListener('online', () => { if (!SKOR_API) return; bekleyenGonder('acilis'); tabloYukle(true); });
+
   /* ================= Boyut değişimi ================= */
   let resizeRaf = 0;
   function onResize() {
@@ -3539,6 +4069,12 @@
       mode: () => (LIGHT ? 'light' : 'dark'),
       setMode: m => applyMode(m === 'light', true),
       clearInfo: arr => { const ci = clearInfoOn(Int8Array.from(arr)); return { one: ci.one.map(q => q.id), multi: ci.multi.map(q => q.id), perfect: ci.perfect.map(q => q.id), top: ci.top }; },
+      // Haftalık skor tablosu
+      skor: () => ({ api: SKOR_API, oyuncu: Object.assign({}, oyuncu), tablo: Skor.tablo, durum: Skor.durum, sonuc: Skor.sonuc, bekleyen: store.get(K_BEKLEYEN, null), gonderiyor: Skor.gonderiyor }),
+      skorGonder: (p, m, n) => skorGonder(p, m, n || 'bitti'),
+      tabloYukle: () => tabloYukle(true),
+      tabloAc: () => tabloAc(),
+      adSor: () => adSor(),
       newGame
     };
   }
@@ -3563,7 +4099,10 @@
     // Kayıtlı oyun varsa kaldığı yerden devam, yoksa yeni oyun
     const restored = (data && data.v === 2 && load(data)) || load();
     if (!restored) newGame();
-    showStart(false);
+    // İlk girişte takma ad sorulur (geçilebilir); sonra başlangıç ekranı ve haftalık tablo
+    if (SKOR_API && !oyuncu.ad && !oyuncu.atla) adSor(() => showStart(false));
+    else showStart(false);
+    if (SKOR_API) { bekleyenGonder('acilis'); tabloYukle(true); }
     wake();
   }
   if (hot && typeof hot.ready === 'function') {

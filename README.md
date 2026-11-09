@@ -15,6 +15,8 @@ parçayı da verir. Tahtayı tamamen boşaltmak (TERTEMİZ!) 1.000 × kombo bonu
 Parçalar çeşitli gelir: aynı parça art arda pek gelmez, oyun ilerledikçe (puan ya da hamle) zorlaşır.
 İKİ KİŞİLİK düello: sırayla aynı sürede (1, 2, 3 ya da 5 dakika) oynanır, en yüksek puanı yapan kazanır;
 iki oyuncu da aynı parçalarla başlar. Düello tek kişilik oyunu ve rekoru etkilemez.
+HAFTANIN EN İYİLERİ: ilk açılışta bir takma ad sorulur (geçilebilir); haftanın en yüksek puanlı 10 oyuncusu
+ana ekranda görünür. Tablo her pazartesi 00:00'da (Türkiye saati) sıfırlanır; puanlar skor.herouygulama.com.tr'de tutulur.
 Ses kesilirse "SES DURDU" düğmesi çıkar, dokununca ses geri gelir. Yeni sürüm yayımlanınca açık oyunda
 "YENİ SÜRÜM VAR" düğmesi çıkar; oyun kayıtlı olduğu için güncelleme kaldığın yerden sürer.
 Her 10.000 puanda tema değişir: 20 tema sırayla döner. Puan arttıkça oyun zorlaşır.
@@ -22,7 +24,8 @@ Bütün şekiller (3x3 kare, çubuklar, L, T, S/Z, çapraz...) eşit sıklıkta 
 
 **Oyna:** https://herophysio.github.io/blok-kahramani/
 
-**Gizlilik:** Hesap, reklam, izleme ve çerez yok; oyun bilgileri yalnızca cihazda saklanır.
+**Gizlilik:** Hesap, reklam, izleme ve çerez yok. Skor tablosuna katılmak isteğe bağlıdır (takma ad ve haftalık puan);
+diğer oyun bilgileri yalnızca cihazda saklanır.
 Ayrıntılar: [Gizlilik Politikası ve KVKK Aydınlatma Metni](https://herophysio.github.io/blok-kahramani/gizlilik.html)
 
 İnternet olmadan da oynanır: oyunu bir kez internetle açınca dosyaları cihaza kaydedilir (`sw.js`).
