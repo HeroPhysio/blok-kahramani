@@ -20,7 +20,7 @@
 <meta property="og:image:height" content="630">
 <meta property="og:locale" content="tr_TR">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="bk-build" content="b7642eb93b">
+<meta name="bk-build" content="61dd396dc0">
 <meta name="theme-color" content="#050817">
 <meta name="author" content="Baran Yavuz, Hero Uygulama Yazılım Teknolojileri Limited Şirketi">
 <meta name="color-scheme" content="dark">
@@ -390,6 +390,7 @@
     transition: transform .12s ease, filter .2s ease;
   }
   .btn:active { transform: scale(.97); }
+  .btn:disabled { opacity: .45; filter: saturate(.55); cursor: default; transform: none; }
   .btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
   .btn-primary {
     color: #041230;
@@ -544,6 +545,8 @@
   .lb-msg { margin: 0; padding: 14px 10px; border-radius: 12px; text-align: center; font: 600 14px/1.35 var(--ui); color: var(--muted); background: rgba(16, 28, 72, .55); }
   .lb-msg b { color: var(--gold); font-weight: 700; }
   .lb-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; margin: 9px 2px 0; font: 600 12px/1.3 var(--ui); color: var(--muted); }
+  .lb-ban { justify-content: center; padding: 9px 10px; border-radius: 11px; text-align: center; color: #ff9aa9; background: rgba(255, 70, 100, .1); box-shadow: inset 0 0 0 1px rgba(255, 110, 135, .35); }
+  .lb-ban b { color: #ffc2cb; }
   .lb-act {
     appearance: none;
     -webkit-appearance: none;
@@ -755,6 +758,8 @@
   html.light .lb-msg b, html.light .lb-act { color: #b87400; }
   html.light .lb-act { background: rgba(255, 197, 49, .16); border-color: rgba(214, 150, 0, .7); }
   html.light .lb-link { color: #0a74c9; }
+  html.light .lb-ban { color: #c41a33; background: rgba(212, 36, 60, .07); box-shadow: inset 0 0 0 1px rgba(212, 36, 60, .3); }
+  html.light .lb-ban b { color: #8f0f22; }
   html.light .lb-skel { background: linear-gradient(90deg, #e6edf8 0%, #f6f9fe 50%, #e6edf8 100%); background-size: 200% 100%; }
   html.light .go-week { background: rgba(255, 197, 49, .14); border-color: rgba(214, 150, 0, .6); color: #1d2b4d; }
   html.light .go-week b { color: #b87400; text-shadow: none; }
@@ -911,7 +916,7 @@
     <button id="nkSave" class="btn btn-primary" type="button">KAYDET</button>
     <button id="nkSkip" class="link-btn" type="button">ŞİMDİLİK GEÇ</button>
     <button id="nkDel" class="link-btn nk-del" type="button" hidden>SKOR KAYITLARIMI SİL</button>
-    <p class="card-foot">Gerçek adını yazmak zorunda değilsin. İlk 10'a girersen takma adın ve puanın herkese görünür. <a href="https://herophysio.github.io/blok-kahramani/gizlilik.html">Gizlilik Politikası</a></p>
+    <p class="card-foot">Gerçek adını yazmak zorunda değilsin. Küfür, cinsel içerik ve hakaret içeren adlar kabul edilmez. İlk 10'a girersen takma adın ve puanın herkese görünür. <a href="https://herophysio.github.io/blok-kahramani/gizlilik.html">Gizlilik Politikası</a></p>
   </div>
 </div>
 
@@ -3712,12 +3717,29 @@
     const h = Array.from(b, x => x.toString(16).padStart(2, '0')).join('');
     return h.slice(0, 8) + '-' + h.slice(8, 12) + '-' + h.slice(12, 16) + '-' + h.slice(16, 20) + '-' + h.slice(20);
   }
-  const oyuncu = Object.assign({ id: '', ad: '', atla: false }, store.get(K_OYUNCU, null) || {});
+  const oyuncu = Object.assign({ id: '', ad: '', atla: false, ban: '' }, store.get(K_OYUNCU, null) || {});
   if (typeof oyuncu.id !== 'string' || !/^[A-Za-z0-9-]{16,64}$/.test(oyuncu.id)) { oyuncu.id = yeniKimlik(); store.set(K_OYUNCU, oyuncu); }
   if (typeof oyuncu.ad !== 'string') oyuncu.ad = '';
+  if (typeof oyuncu.ban !== 'string') oyuncu.ban = '';
 
   const Skor = { tablo: store.get(K_TABLO, null), durum: 'yok', yukleniyor: false, sonIstek: 0, gonderiyor: false, tekrar: false, sonGonderim: 0, zaman: 0, sonuc: null };
   const lbEls = [$('lbStart'), $('lbFull')];
+
+  // Engel (ban): uygunsuz ad denemeleri ya da yönetici kararıyla. Sunucu bildirir, bitiş tarihi cihazda tutulur;
+  // engel sürerken puan gönderilmez ve ad seçilemez, oyun aynen oynanır. Engel kalkınca tablo yenilenirken kendiliğinden açılır.
+  const banli = () => !!oyuncu.ban && Date.parse(oyuncu.ban) > Date.now();
+  function banTarih() {
+    const t = new Date(oyuncu.ban);
+    return isNaN(t) ? '' : String(t.getDate()).padStart(2, '0') + '.' + String(t.getMonth() + 1).padStart(2, '0') + '.' + t.getFullYear();
+  }
+  const banYazi = () => 'Skor tablosuna katılımın ' + (banTarih() ? banTarih() + ' tarihine kadar ' : '') + 'engellendi. Oyunu oynamaya devam edebilirsin.';
+  function banAyarla(d) {
+    const yeni = d && d.banli ? String(d.ban_bitis || new Date(Date.now() + 30 * 86400000).toISOString()) : '';
+    if (yeni === oyuncu.ban) return;
+    oyuncu.ban = yeni;
+    store.set(K_OYUNCU, oyuncu);
+    if (yeni) store.del(K_BEKLEYEN);
+  }
 
   // Takma ad: 2-14 karakter; harf, rakam, boşluk, _ . - (sunucu ayrıca uygunsuz adları reddeder)
   function adDenetle(v) {
@@ -3750,6 +3772,7 @@
   const haftaEnIyi = () => (tabloKalan(Skor.tablo) > 0 && Skor.tablo.ben ? Skor.tablo.ben.puan : 0);
 
   function tabloAl(d) {
+    banAyarla(d);
     Skor.tablo = { hafta: d.hafta, bitis: d.bitis, kalan: d.kalan, alindi: Date.now(), ilk10: Array.isArray(d.ilk10) ? d.ilk10 : [], ben: d.ben || null, toplam: d.toplam | 0 };
     Skor.durum = 'tamam';
     store.set(K_TABLO, Skor.tablo);
@@ -3786,11 +3809,13 @@
 
   function skorGonder(puan, hamle, neden) {
     if (!SKOR_API || duel || !(puan > 0)) return;
+    if (banli()) { if (neden === 'bitti') { Skor.sonuc = { durum: 'ban' }; oyunSonuCiz(); } return; }
     if (puan > haftaEnIyi()) bekleyenEkle(puan, hamle);
     bekleyenGonder(neden);
   }
   function bekleyenGonder(neden) {
     if (!SKOR_API || duel) return;
+    if (banli()) { store.del(K_BEKLEYEN); if (neden === 'bitti') { Skor.sonuc = { durum: 'ban' }; oyunSonuCiz(); } return; }
     const b = bekleyenAl();
     if (!b || b.puan <= haftaEnIyi()) {
       if (b) store.del(K_BEKLEYEN);
@@ -3814,6 +3839,9 @@
           const kalan = store.get(K_BEKLEYEN, null);
           if (kalan && kalan.puan <= b.puan) store.del(K_BEKLEYEN);
           Skor.sonuc = { durum: 'tamam', yeni: !!d.yeni };
+        } else if (d.hata === 'ban') {
+          banAyarla(d);
+          Skor.sonuc = { durum: 'ban' };
         } else if (d.hata === 'ad') {
           // Sunucu takma adı uygun bulmadı: puan bekler, oyuncudan yeni ad istenir
           oyuncu.ad = ''; oyuncu.atla = false; store.set(K_OYUNCU, oyuncu);
@@ -3835,7 +3863,7 @@
   }
   // Uzun oyunda tablo canlı kalsın: haftalık en iyiyi geçince en çok dakikada bir gönderilir
   function skorCanli() {
-    if (SKOR_API && !duel && oyuncu.ad && score > haftaEnIyi() && Date.now() - Skor.sonGonderim > 60000) skorGonder(score, moves, 'oyun');
+    if (SKOR_API && !duel && oyuncu.ad && !banli() && score > haftaEnIyi() && Date.now() - Skor.sonGonderim > 60000) skorGonder(score, moves, 'oyun');
   }
 
   function kalanYazi() {
@@ -3866,7 +3894,9 @@
     } else {
       govde = '<div class="lb-list" aria-label="Yükleniyor">' + '<div class="lb-skel"></div>'.repeat(5) + '</div>';
     }
-    if (!oyuncu.ad) {
+    if (banli()) {
+      govde += '<div class="lb-foot lb-ban" role="note"><span>' + esc(banYazi()).replace(/(\d\d\.\d\d\.\d{4})/, '<b>$1</b>') + '</span></div>';
+    } else if (!oyuncu.ad) {
       const b = bekleyenAl();
       govde += '<button class="lb-act" type="button" data-lb="ad">' + (b ? 'ADINI YAZ, ' + fmt(b.puan) + ' PUANLA TABLOYA GİR' : 'ADINI YAZ, TABLOYA GİR') + '</button>';
     } else {
@@ -3890,6 +3920,7 @@
     else if (r.durum === 'adsiz') { html = TROPHY + '<span>Adını yaz, haftalık tabloya gir <i>›</i></span>'; ne = 'ad'; }
     else if (r.durum === 'adhata') { html = TROPHY + '<span>Takma adın uygun bulunmadı. Yeni ad seç <i>›</i></span>'; ne = 'ad'; }
     else if (r.durum === 'hata') html = TROPHY + '<span>Tabloya bağlanılamadı; internet gelince gönderilir <i>›</i></span>';
+    else if (r.durum === 'ban') html = TROPHY + '<span>Skor tablosuna katılımın engellendi <i>›</i></span>';
     else if (ben) html = TROPHY + '<span>BU HAFTA</span><b>#' + fmt(ben.sira) + '</b><span>' + (r.yeni ? '<i>Haftalık rekorun!</i>' : 'En iyin ' + fmt(ben.puan)) + ' <i>›</i></span>';
     else html = TROPHY + '<span>Haftanın en iyilerini gör <i>›</i></span>';
     goWeek.innerHTML = html;
@@ -3904,9 +3935,10 @@
     adSonra = sonra || null;
     const inp = $('nkName');
     inp.value = oyuncu.ad || '';
+    if (banli()) mesaj = banYazi();
     $('nkErr').hidden = !mesaj;
     $('nkErr').textContent = mesaj || '';
-    $('nkSave').disabled = false;
+    $('nkSave').disabled = banli();
     const del = $('nkDel');
     del.hidden = !oyuncu.ad;
     del.textContent = 'SKOR KAYITLARIMI SİL';
@@ -3930,7 +3962,16 @@
     try {
       // Sunucu adı denetler (uygunsuz ad reddedilir); bağlantı yoksa ad şimdilik kabul edilir
       const d = await skorIstek('ad', { pid: oyuncu.id, ad: r.ad });
+      if (!d.ok && d.hata === 'ban') {
+        // Engellendi: ad kaydedilmez, KAYDET kapalı kalır; pencere kapatılıp oyuna devam edilir
+        banAyarla(d);
+        err.textContent = d.mesaj || banYazi(); err.hidden = false;
+        $('nkSkip').textContent = 'KAPAT';
+        tabloCiz(); oyunSonuCiz();
+        return;
+      }
       if (!d.ok && d.hata === 'ad') { err.textContent = d.mesaj || 'Bu takma ad uygun değil.'; err.hidden = false; btn.disabled = false; return; }
+      if (!d.ok && d.hata === 'yavas') { err.textContent = 'Biraz bekle, sonra tekrar dene.'; err.hidden = false; btn.disabled = false; return; }
       if (d.ok) tabloAl(d);
     } catch (e) { /* çevrimdışı */ }
     btn.disabled = false;
@@ -3962,7 +4003,7 @@
     try {
       const d = await skorIstek('sil', { pid: oyuncu.id });
       if (!d.ok) throw new Error(d.mesaj || 'hata');
-      oyuncu.id = yeniKimlik();
+      if (!banli()) oyuncu.id = yeniKimlik();   // engel sürerken kimlik değişmez (engel yeni kimlikle aşılmasın)
       oyuncu.ad = '';
       oyuncu.atla = true;
       store.set(K_OYUNCU, oyuncu);
@@ -4214,7 +4255,7 @@
       // Haftalık skor tablosu
       muzik: () => ({ ayar: Object.assign({}, muzikAyar), yuklendi: !!Muzik.buf, caliyor: !!Muzik.src, kazanc: Muzik.gain ? Muzik.gain.gain.value : 0,
         bas: Muzik.bas, dongu: Muzik.src ? Muzik.src.loopEnd - Muzik.src.loopStart : 0, sure: Muzik.buf ? Muzik.buf.duration : 0, ac: Sound.ac ? Sound.ac.state : 'yok' }),
-      skor: () => ({ api: SKOR_API, oyuncu: Object.assign({}, oyuncu), tablo: Skor.tablo, durum: Skor.durum, sonuc: Skor.sonuc, bekleyen: store.get(K_BEKLEYEN, null), gonderiyor: Skor.gonderiyor }),
+      skor: () => ({ api: SKOR_API, oyuncu: Object.assign({}, oyuncu), tablo: Skor.tablo, durum: Skor.durum, sonuc: Skor.sonuc, bekleyen: store.get(K_BEKLEYEN, null), gonderiyor: Skor.gonderiyor, banli: banli() }),
       skorGonder: (p, m, n) => skorGonder(p, m, n || 'bitti'),
       tabloYukle: () => tabloYukle(true),
       tabloAc: () => tabloAc(),
@@ -4244,7 +4285,7 @@
     const restored = (data && data.v === 2 && load(data)) || load();
     if (!restored) newGame();
     // İlk girişte takma ad sorulur (geçilebilir); sonra başlangıç ekranı ve haftalık tablo
-    if (SKOR_API && !oyuncu.ad && !oyuncu.atla) adSor(() => showStart(false));
+    if (SKOR_API && !oyuncu.ad && !oyuncu.atla && !banli()) adSor(() => showStart(false));
     else showStart(false);
     if (SKOR_API) { bekleyenGonder('acilis'); tabloYukle(true); }
     muzikYukle();
